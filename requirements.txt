@@ -1,3 +1,4 @@
+opencv-python
 picamera
 wiringpi
-PIL
+pillow
