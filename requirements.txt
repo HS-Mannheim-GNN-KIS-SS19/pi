@@ -1,4 +1,3 @@
 opencv-python
-picamera
-wiringpi
+picamera[array]
 pillow

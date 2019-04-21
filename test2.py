@@ -20,7 +20,7 @@ def reset():
     kit.servo[3].angle = 45
 
 
-def standart_servo_test():
+def standard_servo_test():
     kit.servo[2].angle = 180
     time.sleep(2)
     kit.servo[2].angle = 0

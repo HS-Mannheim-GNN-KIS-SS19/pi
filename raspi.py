@@ -1,43 +1,23 @@
-# import wiringpi as wp
-# from picamera import PiCamera
-from io import BytesIO
-import PIL as pil
-import sys
-from tkinter import *
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+import time
+
+camera = None
 
 
-def camera():
-	camera = PiCamera()
-	camera.resolution = (256, 256)
-	camera.capture('img.png')
-	"""
-	stream = BytesIO()
-	camera.capture(stream, format='png')
-	stream.seek(0)
+def picture():
+    global camera
 
-	image = pil.Image.open(stream)
-	"""
+    if camera is None:
+        camera = PiCamera()
+        camera.resolution = (256, 256)
+        # allow the camera to warmup
+        time.sleep(0.1)
 
+    raw_capture = PiRGBArray(camera)
 
-def robot():
-	# sequential pin numbering
-	wp.wiringPiSetup()
+    # grab an image from the camera
+    camera.capture(raw_capture, format="bgr")
+    image = raw_capture.array
 
-
-if len(sys.argv) > 1:
-	if sys.argv[1] == '-c':
-		camera()
-	elif sys.argv[1] == '-r':
-		robot()
-
-else:
-	main = Tk()
-
-	frame = Frame(main, width=100, height=100)
-	main.bind('<Left>', lambda x: print(x))
-	main.bind('<Right>', lambda x: print(x))
-	main.bind('<Up>', lambda x: print(x))
-	main.bind('<Down>', lambda x: print(x))
-
-	frame.pack()
-	main.mainloop()
+    return image
