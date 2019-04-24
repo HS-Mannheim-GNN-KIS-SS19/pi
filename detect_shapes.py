@@ -2,16 +2,13 @@ import cv2
 import numpy as np
 import imutils
 from imutils import contours
-import time
 
-# import raspi
-# image = raspi.picture()
 
 def nothing(x):
     pass
 
 
-def transform(image, sensitivity, min_dist_between_circles, thres, ratio):
+def _old_transform(image, sensitivity, min_dist_between_circles, thres, ratio):
     if image.shape != (256, 256):
         image = cv2.resize(image, (256, 256))
 
@@ -40,41 +37,33 @@ def transform(image, sensitivity, min_dist_between_circles, thres, ratio):
     return image, reduced
 
 
-def main():
-    start_time = time.time()
-    image = cv2.imread('pitest2.jpg')
-
+def find_marbles(image):
     if image.shape != (256, 256, 3):
         image = cv2.resize(image, (256, 256))
 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    lower_yellow = np.array([80, 60, 0])
-    upper_yellow = np.array([255, 255, 220])
+    lower_blue = np.array([80, 60, 0])
+    upper_blue = np.array([255, 255, 220])
 
-    mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-
+    mask = cv2.inRange(hsv, lower_blue, upper_blue)
     res = cv2.bitwise_and(image, image, mask=mask)
+    res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
 
-    res2 = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY);
-    cnts = cv2.findContours(res2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    cnts = contours.sort_contours(cnts)[0]
-    print("--- %s seconds ---" % (time.time() - start_time))
-    # loop over the contours
-    for (i, c) in enumerate(cnts):
-        # draw the bright spot on the image
-        (x, y, w, h) = cv2.boundingRect(c)
-        ((cX, cY), radius) = cv2.minEnclosingCircle(c)
-        cv2.circle(image, (int(cX), int(cY)), int(radius),
-                   (0, 0, 255), 2)
-        print(str(int(cX)) + "   " + str(int(cY)))
+    conts = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    conts = imutils.grab_contours(conts)
+    conts = contours.sort_contours(conts)[0]
 
-    cv2.imshow('image <-> res', np.hstack([image, res]))
-    cv2.imshow('mask', mask)
-    k = cv2.waitKey(25000) & 0xFF
+    detected_marbles = []
+    for cont in conts:
+        ((x, y), radius) = cv2.minEnclosingCircle(cont)
+        x, y = int(x), int(y)
+        cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
+        detected_marbles.append((x, y))
+
+    return detected_marbles
 
 
-def main2():
+def _old_main():
     image = cv2.imread('handytest.jpg')
     image_copy = image.copy()
     cv2.namedWindow('image')
@@ -91,7 +80,7 @@ def main2():
         thres = cv2.getTrackbarPos('edges_threshold', 'image')
         ratio = cv2.getTrackbarPos('edges_threshold_ratio', 'image')
 
-        image, reduced = transform(image_copy, sensitivity / 10, min_dist, thres, ratio)
+        image, reduced = _old_transform(image_copy, sensitivity / 10, min_dist, thres, ratio)
         # orig_image, image = transform(image, 0.5, 1, 34, 4)
         cv2.imshow('image', np.hstack([reduced, image]))
 
@@ -104,4 +93,5 @@ def main2():
     # cv2.imwrite("output.png", image)
 
 
-main()
+if __name__ == '__main__':
+    find_marbles(cv2.imread('pitest.jpg'))
