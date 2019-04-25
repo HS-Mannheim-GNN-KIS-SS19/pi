@@ -2,14 +2,13 @@ import cv2
 import numpy as np
 import time
 from detect_shapes import find_marbles
-
-# import raspi_camera
+import raspi_camera
 
 while True:
     start_time = time.time()
 
-    # image = raspi_camera.picture()
-    image = cv2.imread('pitest.jpg')
+    image = raspi_camera.picture()
+    #image = cv2.imread('pitest.jpg')
     coords = find_marbles(image)
 
     print('found {} marbles at {}'.format(len(coords), coords))

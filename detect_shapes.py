@@ -42,8 +42,8 @@ def find_marbles(image):
         image = cv2.resize(image, (256, 256))
 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    lower_blue = np.array([80, 60, 0])
-    upper_blue = np.array([255, 255, 220])
+    lower_blue = np.array([100, 0, 0])
+    upper_blue = np.array([255, 255, 255])
 
     mask = cv2.inRange(hsv, lower_blue, upper_blue)
     res = cv2.bitwise_and(image, image, mask=mask)
@@ -51,13 +51,18 @@ def find_marbles(image):
 
     conts = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     conts = imutils.grab_contours(conts)
-    conts = contours.sort_contours(conts)[0]
+
+    if len(conts) > 0:
+        conts = contours.sort_contours(conts)[0]
 
     detected_marbles = []
     for cont in conts:
         ((x, y), radius) = cv2.minEnclosingCircle(cont)
-        x, y = int(x), int(y)
+        if radius < 7:
+            continue
+        x, y, radius = int(x), int(y), int(radius)
         cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
+        cv2.circle(image, (x, y), radius, (255, 0, 0), 2)
         detected_marbles.append((x, y))
 
     return detected_marbles
