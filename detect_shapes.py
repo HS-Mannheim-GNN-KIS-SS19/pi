@@ -51,7 +51,9 @@ def find_marbles(image):
 
     conts = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     conts = imutils.grab_contours(conts)
-    conts = contours.sort_contours(conts)[0]
+
+    if len(conts) > 0:
+        conts = contours.sort_contours(conts)[0]
 
     detected_marbles = []
     for cont in conts:
