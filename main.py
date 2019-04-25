@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import time
 from detect_shapes import find_marbles
+
 # import raspi_camera
 
 while True:
@@ -16,6 +17,8 @@ while True:
     print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))
     print('----------------')
 
+    cv2.imshow('live view', image)
+    cv2.waitKey(1)
 
 # cv2.imshow('image', image)
 # k = cv2.waitKey(0) & 0xFF
