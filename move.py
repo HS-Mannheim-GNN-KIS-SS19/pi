@@ -9,7 +9,8 @@ from adafruit_servokit import ServoKit
 # 8 for FeatherWing, 16 for Shield/HAT/Bonnet.
 
 
-STEPS = 1
+step_size = 1
+step_speed = 1
 
 kit = ServoKit(channels=8)
 
@@ -33,9 +34,15 @@ def standard_servo_test():
 
 def move(servo, angle):
     delta = abs(kit.servo[servo].angle - angle)
-    for i in range(delta // STEPS):
-        kit.servo[servo].angle = kit.servo[servo].angle + STEPS
-    kit.servo[servo].angle = kit.servo[servo].angle = angle
+    for i in range(delta // step_size):
+        if delta < 0:
+            kit.servo[servo].angle = kit.servo[servo].angle - step_size
+        else:
+            kit.servo[servo].angle = kit.servo[servo].angle + step_size
+        time.sleep(1 / step_speed)
+    if delta % 2 == 1:
+        kit.servo[servo].angle = kit.servo[servo].angle = angle
+        time.sleep(1 / 2 * step_speed)
 
 # für greifen
 # kit.servo[3].angle = 35
