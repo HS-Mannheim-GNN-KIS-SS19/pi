@@ -12,12 +12,15 @@ def picture():
         camera = PiCamera()
         camera.resolution = (256, 256)
         # allow the camera to warmup
-        time.sleep(0.1)
+        time.sleep(1)
 
     raw_capture = PiRGBArray(camera)
 
     # grab an image from the camera
     camera.capture(raw_capture, format="bgr")
     image = raw_capture.array
+
+    if image is None:
+        raise "no image"
 
     return image
