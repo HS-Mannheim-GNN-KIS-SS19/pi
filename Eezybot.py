@@ -2,6 +2,11 @@ import time
 from adafruit_servokit import ServoKit
 from math import atan2, degrees
 
+# for safety kill
+import threading
+import sys
+from pynput import keyboard
+
 BASE_CHANNEL = 0
 ARM_VERTICAL_CHANNEL = 1
 ARM_HORIZONTAL_CHANNEL = 2
@@ -15,8 +20,7 @@ STEP_TIME = 1
 kit = ServoKit(channels=8)
 
 
-class Servo():
-
+class Servo:
     def __init__(self, channel_number):
         self.channel_number = channel_number
 
@@ -72,6 +76,17 @@ class Clutch(Servo):
         self.turn(35)
 
 
+def esc_kill():
+    def on_press(key):
+        if str(key) == 'Key.esc':
+            sys.exit()
+
+    with keyboard.Listener(on_press=on_press) as listener:
+        listener.join()
+
+
+threading.Thread(target=esc_kill).run()
+
 base = Base()
 armVertical = ArmVertical()
 armHorizontal = ArmHorizontal()
@@ -105,4 +120,3 @@ servo_test()
 
 # shoud turn the base 90 degree
 # base.turn_to(0, 1)
-
