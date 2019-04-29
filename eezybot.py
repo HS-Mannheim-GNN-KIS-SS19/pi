@@ -34,7 +34,7 @@ class _Servo:
         else:
             from queue import Queue
 
-        self.channel_number = channel_number
+        self.__channel_number = channel_number
         self.__interrupted = False
         self.__queue = Queue()
         threading.Thread(target=self.__rotation_control, daemon=True).start()
@@ -64,9 +64,9 @@ class _Servo:
 
     def __run_rotation(self, angle):
         performed = None
-        next_angle = _kit.servo[self.channel_number].angle
+        next_angle = _kit.servo[self.__channel_number].angle
         # calculate delta betwe      en current angle and destined angle
-        delta = angle - _kit.servo[self.channel_number].angle
+        delta = angle - _kit.servo[self.__channel_number].angle
 
         # divide delta in steps wich will be added on the current angle until the destined angle is reached
         # can be interrupted through interrupted flag
@@ -87,7 +87,7 @@ class _Servo:
             self.__run_step(angle)
 
     def __run_step(self, angle):
-        _kit.servo[self.channel_number].angle = angle
+        _kit.servo[self.__channel_number].angle = angle
         time.sleep(_STEP_TIME)
 
     # waits until all rotations in the queue are performed
@@ -228,10 +228,10 @@ def interrupt_all():
 
 
 def wait_for_all():
-    base.wait_for_rotations()
-    armVertical.wait_for_rotations()
-    armHorizontal.wait_for_rotations()
-    clutch.wait_for_rotations()
+    base.wait()
+    armVertical.wait()
+    armHorizontal.wait()
+    clutch.wait()
 
 
 def hard_reset():
