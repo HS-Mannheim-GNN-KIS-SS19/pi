@@ -9,8 +9,8 @@ _ARM_VERTICAL_CHANNEL = 1
 _ARM_HORIZONTAL_CHANNEL = 2
 _CLUTCH_CHANNEL = 3
 
-_STEP_SIZE = 1
-_STEP_TIME = 0.1
+_STEP_SIZE = 0.5
+_STEP_TIME = 0.005
 
 # Set channels to the number of servo channels on your kit.
 # 8 for FeatherWing, 16 for Shield/HAT/Bonnet.
@@ -82,7 +82,8 @@ class _Servo:
             if performed is not None:
                 performed.wait()
             performed = pool.apply_async(self.__run_step, args=(next_angle,))
-        performed.wait()
+        if performed is not None:
+            performed.wait()
         if (not self.__interrupted) and delta % _STEP_SIZE != 0:
             self.__run_step(angle)
 
@@ -94,13 +95,13 @@ class _Servo:
     def wait(self):
         self.__queue.join()
 
-    def reset(self):
-        self.rotate(0)
-
     # interrupts and clears all rotations
     def interrupt(self):
         self.__interrupted = True
         self.wait()
+
+    def get_rotation(self):
+        return _kit.servo[self.__channel_number].angle
 
 
 class _Base(_Servo):
@@ -120,6 +121,12 @@ class _Base(_Servo):
         else:
             super().__init__(_BASE_CHANNEL)
             _Base.__instance = self
+
+    def reset(self, wait=True):
+        if wait:
+            self.rotate_and_wait(90)
+        else:
+            self.rotate(90)
 
     # rotations base to a point relative to the robot
     def rotate_to(self, x, y):
@@ -152,6 +159,12 @@ class _ArmVertical(_Servo):
             super().__init__(_ARM_VERTICAL_CHANNEL)
             _ArmVertical.__instance = self
 
+    def reset(self, wait=True):
+        if wait:
+            self.rotate_and_wait(75)
+        else:
+            self.rotate(75)
+
 
 class _ArmHorizontal(_Servo):
     __instance = None
@@ -170,6 +183,12 @@ class _ArmHorizontal(_Servo):
         else:
             super().__init__(_ARM_HORIZONTAL_CHANNEL)
             _ArmHorizontal.__instance = self
+
+    def reset(self, wait=True):
+        if wait:
+            self.rotate_and_wait(20)
+        else:
+            self.rotate(20)
 
 
 class _Clutch(_Servo):
@@ -190,33 +209,23 @@ class _Clutch(_Servo):
             super().__init__(_CLUTCH_CHANNEL)
             _Clutch.__instance = self
 
-    def reset(self):
-        self.rotate(45)
+    def reset(self, wait=True):
+        if wait:
+            self.rotate_and_wait(45)
+        else:
+            self.rotate(45)
 
-    def grab(self):
-        self.rotate(35)
-
-
-base = _Base.get_instance()
-armVertical = _ArmVertical.get_instance()
-armHorizontal = _ArmHorizontal.get_instance()
-clutch = _Clutch.get_instance()
-
-
-def _esc_kill():
-    from pynput import keyboard
-
-    def on_press(key):
-        if str(key) == 'Key.esc':
-            interrupt_all()
-            reset()
-            sys.exit()
-
-    with keyboard.Listener(on_press=on_press) as listener:
-        listener.join()
+    def grab(self, wait=True):
+        if wait:
+            self.rotate_and_wait(35)
+        else:
+            self.rotate(35)
 
 
-threading.Thread(target=_esc_kill).start()
+base = _Base()
+armVertical = _ArmVertical()
+armHorizontal = _ArmHorizontal()
+clutch = _Clutch()
 
 
 # interrupts and clears all rotations
@@ -235,13 +244,56 @@ def wait_for_all():
 
 
 def hard_reset():
-    _kit.servo[_BASE_CHANNEL].angle = 0
-    _kit.servo[_ARM_VERTICAL_CHANNEL].angle = 80
-    _kit.servo[_ARM_HORIZONTAL_CHANNEL].angle = 0
-    _kit.servo[_CLUTCH_CHANNEL].angle = 45
+    try:
+        interrupt_all()
+    finally:
+        _kit.servo[_BASE_CHANNEL].angle = 90
+        _kit.servo[_ARM_VERTICAL_CHANNEL].angle = 75
+        _kit.servo[_ARM_HORIZONTAL_CHANNEL].angle = 20
+        _kit.servo[_CLUTCH_CHANNEL].angle = 45
 
-def reset():
-    base.reset()
-    armVertical.reset()
-    armHorizontal.reset()
-    clutch.reset()
+
+def reset(wait=True):
+    base.reset(wait)
+    armVertical.reset(wait)
+    armHorizontal.reset(wait)
+    clutch.reset(wait)
+
+
+def key_listener():
+    while True:
+        def on_press(key):
+            if str(key) == chr(27):
+                interrupt_all()
+                reset()
+                sys.exit()
+
+            if str(key) == 'q':
+                base.rotate_and_wait(base.get_rotation() + 5)
+
+            if str(key) == 'a':
+                base.rotate_and_wait(base.get_rotation() - 5)
+
+            if str(key) == 'w':
+                armVertical.rotate_and_wait(armVertical.get_rotation() + 5)
+
+            if str(key) == 's':
+                armVertical.rotate_and_wait(armVertical.get_rotation() - 5)
+
+            if str(key) == 'e':
+                armHorizontal.rotate_and_wait(armHorizontal.get_rotation() + 5)
+
+            if str(key) == 'd':
+                armHorizontal.rotate_and_wait(armHorizontal.get_rotation() - 5)
+
+            if str(key) == 'r':
+                clutch.rotate_and_wait(clutch.get_rotation() + 5)
+
+            if str(key) == 'f':
+                clutch.rotate_and_wait(clutch.get_rotation() - 5)
+
+        on_press(sys.stdin.read(1))
+        time.sleep(0.1)
+
+
+key_listener()

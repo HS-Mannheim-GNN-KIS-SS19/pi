@@ -5,8 +5,6 @@ _ARM_VERTICAL_CHANNEL = 1
 _ARM_HORIZONTAL_CHANNEL = 2
 _CLUTCH_CHANNEL = 3
 
-
-
 _kit = adafruit_servokit.ServoKit(channels=8)
 
 _kit.servo[_BASE_CHANNEL].angle = 0
