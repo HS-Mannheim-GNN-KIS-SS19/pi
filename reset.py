@@ -11,5 +11,5 @@ _kit = adafruit_servokit.ServoKit(channels=8)
 
 _kit.servo[_BASE_CHANNEL].angle = 0
 _kit.servo[_ARM_VERTICAL_CHANNEL].angle = 75
-_kit.servo[_ARM_HORIZONTAL_CHANNEL].angle = 0
+_kit.servo[_ARM_HORIZONTAL_CHANNEL].angle = 20
 _kit.servo[_CLUTCH_CHANNEL].angle = 45

@@ -107,7 +107,7 @@ class _Base(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance() -> "_Base":
+    def get_instance():
         """ Static access method. """
         if _Base.__instance is None:
             _Base()
@@ -138,7 +138,7 @@ class _ArmVertical(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance() -> "_ArmVertical":
+    def get_instance():
         """ Static access method. """
         if _ArmVertical.__instance is None:
             _ArmVertical()
@@ -157,7 +157,7 @@ class _ArmHorizontal(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance() -> "_ArmHorizontal":
+    def get_instance():
         """ Static access method. """
         if _ArmHorizontal.__instance is None:
             _ArmHorizontal()
@@ -176,7 +176,7 @@ class _Clutch(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance() -> "_Clutch":
+    def get_instance():
         """ Static access method. """
         if _Clutch.__instance is None:
             _Clutch()
@@ -235,14 +235,10 @@ def wait_for_all():
 
 
 def hard_reset():
-    try:
-        interrupt_all()
-    finally:
-        _kit.servo[_BASE_CHANNEL].angle = 0
-        _kit.servo[_ARM_VERTICAL_CHANNEL].angle = 0
-        _kit.servo[_ARM_HORIZONTAL_CHANNEL].angle = 0
-        _kit.servo[_CLUTCH_CHANNEL].angle = 45
-
+    _kit.servo[_BASE_CHANNEL].angle = 0
+    _kit.servo[_ARM_VERTICAL_CHANNEL].angle = 80
+    _kit.servo[_ARM_HORIZONTAL_CHANNEL].angle = 0
+    _kit.servo[_CLUTCH_CHANNEL].angle = 45
 
 def reset():
     base.reset()
