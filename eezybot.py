@@ -78,7 +78,7 @@ class _Servo:
             else:
                 next_angle += _STEP_SIZE
             if self.__interrupted:
-                break
+                return
             if performed is not None:
                 performed.wait()
             performed = pool.apply_async(self.__run_step, args=(next_angle,))
@@ -107,7 +107,7 @@ class _Base(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance():
+    def get_instance() -> "_Base":
         """ Static access method. """
         if _Base.__instance is None:
             _Base()
@@ -138,7 +138,7 @@ class _ArmVertical(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance():
+    def get_instance() -> "_ArmVertical":
         """ Static access method. """
         if _ArmVertical.__instance is None:
             _ArmVertical()
@@ -157,7 +157,7 @@ class _ArmHorizontal(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance():
+    def get_instance() -> "_ArmHorizontal":
         """ Static access method. """
         if _ArmHorizontal.__instance is None:
             _ArmHorizontal()
@@ -176,7 +176,7 @@ class _Clutch(_Servo):
     __instance = None
 
     @staticmethod
-    def get_instance():
+    def get_instance() -> "_Clutch":
         """ Static access method. """
         if _Clutch.__instance is None:
             _Clutch()
@@ -197,10 +197,10 @@ class _Clutch(_Servo):
         self.rotate(35)
 
 
-base = _Base()
-armVertical = _ArmVertical()
-armHorizontal = _ArmHorizontal()
-clutch = _Clutch()
+base = _Base.get_instance()
+armVertical = _ArmVertical.get_instance()
+armHorizontal = _ArmHorizontal.get_instance()
+clutch = _Clutch.get_instance()
 
 
 def _esc_kill():
@@ -249,31 +249,3 @@ def reset():
     armVertical.reset()
     armHorizontal.reset()
     clutch.reset()
-
-
-def servo_test():
-    reset()
-    base.rotate(180)
-    time.sleep(1)
-    base.reset()
-    armVertical.rotate(180)
-    time.sleep(1)
-    armVertical.reset()
-    armHorizontal.rotate(180)
-    time.sleep(1)
-    armHorizontal.reset()
-    clutch.grab()
-    time.sleep(1)
-    clutch.reset()
-    time.sleep(3)
-
-
-try:
-    servo_test()
-finally:
-    hard_reset()
-    sys.exit(0)
-
-# shoud rotate the base 90 degree
-# base.rotate_to(0, 1)
-# base.wait()
