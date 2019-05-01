@@ -1,32 +1,63 @@
-class _CHANNELS:
-    BASE = 0
-    VERTICAL = 1
-    HORIZONTAL = 2
-    CLUTCH = 3
-
-
-class _STEP:
+class STEP_CONTROL:
     SIZE = 0.5
     TIME = 0.005
 
 
-class _MIN:
-    SIZE = 0.5
-    TIME = 0.005
+class BASE:
+    CHANNEL = 0
+    MIN = 0
+    DEFAULT = 0
+    MAX = 0
 
 
-class _DEFAULT:
-    BASE = 0
-    VERTICAL = 75
-    HORIZONTAL = 20
-    CLUTCH = 45
+class VERTICAL:
+    CHANNEL = 1
+    MIN = 75
+    DEFAULT = 75
+    MAX = 75
 
 
-class _MAX:
-    SIZE = 0.5
-    TIME = 0.005
+class HORIZONTAL:
+    CHANNEL = 2
+    MIN = 20
+    DEFAULT = 20
+    MAX = 20
 
 
-# makes private Classes importable.
-# importing of private Classes prevents the pollution of namespace with Classes from Constants Module
-__all__ = ['_CHANNELS', '_STEP', '_MIN', '_DEFAULT', '_MAX']
+class CLUTCH:
+    CHANNEL = 3
+    MIN = 45
+    DEFAULT = 45
+    MAX = 45
+    GRAB = 45
+
+
+class MANUEL_CONTROL:
+    STEP = 5
+
+# STEP_SIZE = 0.5
+# STEP_TIME = 0.005
+#
+# BASE_CHANNEL = 0
+# BASE_MIN = 0
+# BASE_DEFAULT = 0
+# BASE_MAX = 0
+#
+# VERTICAL_CHANNEL = 1
+# VERTICAL_MIN = 75
+# VERTICAL_DEFAULT = 75
+# VERTICAL_MAX = 75
+#
+# HORIZONTAL_CHANNEL = 2
+# HORIZONTAL_MIN = 20
+# HORIZONTAL_DEFAULT = 20
+# HORIZONTAL_MAX = 20
+#
+# CLUTCH_CHANNEL = 3
+# CLUTCH_MIN = 45
+# CLUTCH_DEFAULT = 45
+# CLUTCH_MAX = 45
+# CLUTCH_GRAB = 45
+#
+# MANUEL_CONTROL_STEP = 5
+#
