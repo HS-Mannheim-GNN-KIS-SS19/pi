@@ -4,17 +4,17 @@ from constants import *
 
 
 def servo_test_max():
-    eezybot.base.rotate(BASE.MAX).wait()
-    eezybot.verticalArm.rotate(VERTICAL.MAX).wait()
-    eezybot.horizontalArm.rotate(HORIZONTAL.MAX).wait()
-    eezybot.clutch.rotate(CLUTCH.MAX).wait()
+    eezybot.base.rotate(BASE.MAX)
+    eezybot.verticalArm.rotate(VERTICAL.MAX)
+    eezybot.horizontalArm.rotate(HORIZONTAL.MAX)
+    eezybot.clutch.rotate(CLUTCH.MAX)
 
 
 def servo_test_min():
-    eezybot.base.rotate(BASE.MIN).wait()
-    eezybot.verticalArm.rotate(VERTICAL.MIN).wait()
-    eezybot.horizontalArm.rotate(HORIZONTAL.MIN).wait()
-    eezybot.clutch.rotate(CLUTCH.MIN).wait()
+    eezybot.base.rotate(BASE.MIN)
+    eezybot.verticalArm.rotate(VERTICAL.MIN)
+    eezybot.horizontalArm.rotate(HORIZONTAL.MIN)
+    eezybot.clutch.rotate(CLUTCH.MIN)
 
 
 def testBoth():

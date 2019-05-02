@@ -5,19 +5,19 @@ import sys
 import constants as cons
 
 
-# import adafruit_servokit
+import adafruit_servokit
 
-# Dummy Class for Testing
-class adafruit_servokit:
-    class ServoValue:
-        def __init__(self):
-            self.angle = 0
-
-    servo = [ServoValue(), ServoValue(), ServoValue(), ServoValue()]
-
-    @staticmethod
-    def ServoKit(channels=8):
-        return adafruit_servokit
+# # Dummy Class for Testing
+# class adafruit_servokit:
+#     class ServoValue:
+#         def __init__(self):
+#             self.angle = 0
+# 
+#     servo = [ServoValue(), ServoValue(), ServoValue(), ServoValue()]
+#
+#     @staticmethod
+#     def ServoKit(channels=8):
+#         return adafruit_servokit
 
 
 # Set channels to the number of servo channels on your kit.
@@ -235,7 +235,7 @@ class _Clutch(_Servo):
         if _Clutch.__instance is not None:
             raise TypeError("This class is a singleton!")
         else:
-            super().__init__(cons.CLUTCH.CHANNEL, cons.CLUTCH.MAX, cons.CLUTCH.DEFAULT, cons.CLUTCH.MAX)
+            super().__init__(cons.CLUTCH.CHANNEL, cons.CLUTCH.MIN, cons.CLUTCH.DEFAULT, cons.CLUTCH.MAX)
             _Clutch.__instance = self
 
     def grab(self):
@@ -336,7 +336,7 @@ class _Eezybot:
             if angle < min:
                 print("Rotation out of Bounds: cur: {} < min: {}".format(angle, min))
                 return False
-            elif angle < max:
+            elif angle > max:
                 print("Rotation out of Bounds: cur: {} > max: {}".format(angle, max))
                 return False
             return True
@@ -352,7 +352,7 @@ class _Eezybot:
             if str(key) == 'c':
                 self.clear_all_queues()
                 print("clearing queue")
-            if str(key) == 'r':
+            if str(key) == 'b':
                 self.to_default()
                 print("to_default")
 
@@ -371,19 +371,19 @@ class _Eezybot:
                 angle = self.base.wait().get_rotation() - stepSize
                 if bounds_check(angle, cons.BASE.MIN, cons.BASE.MAX):
                     self.base.rotate(angle)
-            elif str(key) == 'w':
+            elif str(key) == 'e':
                 angle = self.verticalArm.wait().get_rotation() + stepSize
                 if bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX):
                     self.verticalArm.rotate(angle)
-            elif str(key) == 's':
+            elif str(key) == 'd':
                 angle = self.verticalArm.wait().get_rotation() - stepSize
                 if bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX):
                     self.verticalArm.rotate(angle)
-            elif str(key) == 'e':
+            elif str(key) == 'w':
                 angle = self.horizontalArm.wait().get_rotation() + stepSize
                 if bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX):
                     self.horizontalArm.rotate(angle)
-            elif str(key) == 'd':
+            elif str(key) == 's':
                 angle = self.horizontalArm.wait().get_rotation() - stepSize
                 if bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX):
                     self.horizontalArm.rotate(angle)

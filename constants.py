@@ -1,33 +1,33 @@
 class STEP_CONTROL:
-    SIZE = 0.5
-    TIME = 0.005
+    SIZE = 1
+    TIME = 0.01
 
 
 class BASE:
     CHANNEL = 0
     MIN = 0
-    DEFAULT = 0
-    MAX = 0
-
-
-class VERTICAL:
-    CHANNEL = 1
-    MIN = 0
-    DEFAULT = 75
+    DEFAULT = 90
     MAX = 180
 
 
 class HORIZONTAL:
+    CHANNEL = 1
+    MIN = 0
+    DEFAULT = 40
+    MAX = 150
+
+
+class VERTICAL:
     CHANNEL = 2
     MIN = 0
-    DEFAULT = 20
-    MAX = 180
+    DEFAULT = 120
+    MAX = 125
 
 
 class CLUTCH:
     CHANNEL = 3
     MIN = 0
-    DEFAULT = 45
+    DEFAULT = 60
     MAX = 180
     GRAB = 45
 
