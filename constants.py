@@ -12,23 +12,23 @@ class BASE:
 
 class VERTICAL:
     CHANNEL = 1
-    MIN = 75
+    MIN = 0
     DEFAULT = 75
-    MAX = 75
+    MAX = 180
 
 
 class HORIZONTAL:
     CHANNEL = 2
-    MIN = 20
+    MIN = 0
     DEFAULT = 20
-    MAX = 20
+    MAX = 180
 
 
 class CLUTCH:
     CHANNEL = 3
-    MIN = 45
+    MIN = 0
     DEFAULT = 45
-    MAX = 45
+    MAX = 180
     GRAB = 45
 
 

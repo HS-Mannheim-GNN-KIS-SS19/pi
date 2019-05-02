@@ -25,7 +25,8 @@ def testBoth():
 
 
 eezybot.start().print_performed_rotations(True).activate_key_listener()
-testBoth()
+print("ready")
+sleep(10000)
 
 # shoud rotate the base 90 degree
 # eezybot.base.rotate_to(0, 1)

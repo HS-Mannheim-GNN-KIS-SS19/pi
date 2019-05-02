@@ -2,23 +2,22 @@ import multiprocessing.pool
 import threading
 import time
 import sys
-import warnings
 import constants as cons
 
 
-import adafruit_servokit
+# import adafruit_servokit
 
-# # Dummy Class for Testing
-# class adafruit_servokit:
-#     class ServoValue:
-#         def __init__(self):
-#             self.angle = 0
-#
-#     servo = [ServoValue(), ServoValue(), ServoValue(), ServoValue()]
-#
-#     @staticmethod
-#     def ServoKit(channels=8):
-#         return adafruit_servokit
+# Dummy Class for Testing
+class adafruit_servokit:
+    class ServoValue:
+        def __init__(self):
+            self.angle = 0
+
+    servo = [ServoValue(), ServoValue(), ServoValue(), ServoValue()]
+
+    @staticmethod
+    def ServoKit(channels=8):
+        return adafruit_servokit
 
 
 # Set channels to the number of servo channels on your kit.
@@ -49,6 +48,7 @@ class _Servo:
         self.__rotation_controller_thread = None
         self.__queue = Queue()
         # Flags
+        self.__wait_for_servo = None
         self.__print_rotations = False
         self.__clear_queue = False
         self.__block_rotate_method = False
@@ -63,7 +63,7 @@ class _Servo:
         return self
 
     def _resolveDegree(self, value):
-        return int(value * (self.__max_degrees - self.__min_degrees))
+        return self.__min_degrees + int(value * (self.__max_degrees - self.__min_degrees))
 
     # adds new Rotation to the queue.
     # Movement will be performed through the rotation controller calling the __run_rotation(angle) function
@@ -87,6 +87,9 @@ class _Servo:
     def __rotation_control(self):
         from queue import Empty
         while not self.__shutdown_rotation_controller:
+            if self.__wait_for_servo is not None:
+                self.__wait_for_servo.wait()
+                self.__wait_for_servo = None
             if self.__clear_queue:
                 self.__clear_queue = False
                 while not self.__queue.empty():
@@ -133,11 +136,11 @@ class _Servo:
 
     # waits until the rotation queue is empty
     def wait(self):
-        if self.__rotation_controller_thread is None or not self.__rotation_controller_thread.is_alive():
-            message = "Servo {} has not been started yet but still attempting to wait for rotations to be performed".format(
-                self.__class__.__name__[1:])
-            warnings.warn(message)
         self.__queue.join()
+        return self
+
+    def wait_for_servo(self, servo):
+        self.__wait_for_servo = servo
         return self
 
     # _clears and clears all rotations
@@ -281,10 +284,10 @@ class _Eezybot:
         self.clutch.to_default()
         return self
 
-    def to_default_and_shutdown(self):
+    def to_default_and_shutdown(self, interrupt=False):
         return self.shutdown(base_angle=cons.BASE.DEFAULT, vertical_angle=cons.VERTICAL.DEFAULT,
                              horizontal_angle=cons.HORIZONTAL.DEFAULT,
-                             clutch_angle=cons.CLUTCH.DEFAULT)
+                             clutch_angle=cons.CLUTCH.DEFAULT, interrupt=interrupt)
 
     def shutdown(self, base_angle=None, vertical_angle=None, horizontal_angle=None, clutch_angle=None, interrupt=False):
         if not self.is_running:
@@ -329,39 +332,69 @@ class _Eezybot:
         return self
 
     def __key_listener(self):
+        def bounds_check(angle, min, max):
+            if angle < min:
+                print("Rotation out of Bounds: cur: {} < min: {}".format(angle, min))
+                return False
+            elif angle < max:
+                print("Rotation out of Bounds: cur: {} > max: {}".format(angle, max))
+                return False
+            return True
+
+        stepSize = cons.MANUEL_CONTROL.STEP
         while self.is_running:
             key = sys.stdin.read(1)
 
             if str(key) == chr(27):
                 print("shutting down Eezybot")
-                self.to_default_and_shutdown()
-                sys.exit(0)
-            if str(key) == 'k':
-                print("System Exit")
+                self.to_default_and_shutdown(interrupt=True)
                 sys.exit(0)
             if str(key) == 'c':
-                print("clearing queue")
                 self.clear_all_queues()
+                print("clearing queue")
             if str(key) == 'r':
-                print("to_default")
                 self.to_default()
+                print("to_default")
+
+            if str(key) == '+' or str(key) == 'm':
+                stepSize += 1
+                print("Stepsize = {}".format(stepSize))
+            if str(key) == '+' or str(key) == 'n':
+                stepSize -= 1
+                print("Stepsize = {}".format(stepSize))
 
             if str(key) == 'q':
-                self.base.rotate(self.base.wait().get_rotation() + cons.MANUEL_CONTROL.STEP)
+                angle = self.base.wait().get_rotation() + stepSize
+                if bounds_check(angle, cons.BASE.MIN, cons.BASE.MAX):
+                    self.base.rotate(angle)
             elif str(key) == 'a':
-                self.base.rotate(self.base.wait().get_rotation() - cons.MANUEL_CONTROL.STEP)
+                angle = self.base.wait().get_rotation() - stepSize
+                if bounds_check(angle, cons.BASE.MIN, cons.BASE.MAX):
+                    self.base.rotate(angle)
             elif str(key) == 'w':
-                self.verticalArm.rotate(self.verticalArm.wait().get_rotation() + cons.MANUEL_CONTROL.STEP)
+                angle = self.verticalArm.wait().get_rotation() + stepSize
+                if bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX):
+                    self.verticalArm.rotate(angle)
             elif str(key) == 's':
-                self.verticalArm.rotate(self.verticalArm.wait().get_rotation() - cons.MANUEL_CONTROL.STEP)
+                angle = self.verticalArm.wait().get_rotation() - stepSize
+                if bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX):
+                    self.verticalArm.rotate(angle)
             elif str(key) == 'e':
-                self.horizontalArm.rotate(self.horizontalArm.wait().get_rotation() + cons.MANUEL_CONTROL.STEP)
+                angle = self.horizontalArm.wait().get_rotation() + stepSize
+                if bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX):
+                    self.horizontalArm.rotate(angle)
             elif str(key) == 'd':
-                self.horizontalArm.rotate(self.horizontalArm.wait().get_rotation() - cons.MANUEL_CONTROL.STEP)
+                angle = self.horizontalArm.wait().get_rotation() - stepSize
+                if bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX):
+                    self.horizontalArm.rotate(angle)
             elif str(key) == 'r':
-                self.clutch.rotate(self.clutch.wait().get_rotation() + cons.MANUEL_CONTROL.STEP)
+                angle = self.clutch.wait().get_rotation() + stepSize
+                if bounds_check(angle, cons.CLUTCH.MIN, cons.CLUTCH.MAX):
+                    self.clutch.rotate(angle)
             elif str(key) == 'f':
-                self.clutch.rotate(self.clutch.wait().get_rotation() - cons.MANUEL_CONTROL.STEP)
+                angle = self.clutch.wait().get_rotation() - stepSize
+                if bounds_check(angle, cons.CLUTCH.MIN, cons.CLUTCH.MAX):
+                    self.clutch.rotate(angle)
             time.sleep(0.1)
 
 
