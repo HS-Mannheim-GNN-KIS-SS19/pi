@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import imutils
 from imutils import contours
+import subprocess
+import main
 
 
 def nothing(x):
@@ -19,7 +21,6 @@ def _old_transform(image, sensitivity, min_dist_between_circles, thres, ratio):
 
     # detect circles in the image
     circles = cv2.HoughCircles(reduced, cv2.HOUGH_GRADIENT, sensitivity, min_dist_between_circles)
-
     # ensure at least some circles were found
     if circles is not None:
         # convert the (x, y) coordinates and radius of the circles to integers
@@ -98,5 +99,19 @@ def _old_main():
     # cv2.imwrite("output.png", image)
 
 
+def detect_with_python2():
+    python = 'python2'
+    completed_process = subprocess.run([python, 'detect_shapes.py'], capture_output=True)
+    # parse list string to list object
+    return eval(completed_process.stdout)
+
+
+# called when executed directly
 if __name__ == '__main__':
-    find_marbles(cv2.imread('pitest.jpg'))
+    if main.DEBUG:
+        image = cv2.imread('pitest.jpg')
+    else:
+        import raspi_camera
+        image = raspi_camera.picture()
+
+    print(find_marbles(image))
