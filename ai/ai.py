@@ -1,6 +1,6 @@
 import numpy as np
 import gym
-import gym_soccer
+import gym_eezybot
 
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten
@@ -11,7 +11,8 @@ from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
 # Get the environment and extract the number of actions.
-ENV_NAME = env = gym.make('Soccer-v0')
+ENV_NAME = 'EezybotEnv-v0'
+env = gym.make(ENV_NAME)
 
 np.random.seed(123)
 nb_actions = env.action_space.n
