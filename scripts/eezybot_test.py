@@ -1,6 +1,6 @@
 from time import sleep
-from scripts.eezybotServoController import eezybot
-from scripts.constants import *
+from eezybotServoController import eezybot
+from constants import *
 
 
 def servo_test_max():
@@ -18,13 +18,15 @@ def servo_test_min():
 
 
 def testBoth():
-    eezybot.to_default().wait_for_all()
+    eezybot.to_default()
+    eezybot.wait_for_all()
     servo_test_max()
     eezybot.wait_for_all()
     servo_test_min()
 
 
 eezybot.start().print_performed_rotations(True).activate_key_listener()
+testBoth()
 print("ready")
 sleep(10000)
 

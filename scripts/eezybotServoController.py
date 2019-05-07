@@ -1,7 +1,7 @@
 import threading
 import time
 import sys
-from scripts import constants as cons
+import constants as cons
 
 import adafruit_servokit
 
@@ -79,7 +79,7 @@ class _Servo:
         else:
             if angle < self.__min_degrees:
                 raise AssertionError("Rotation out of Bounds: cur: {} < min: {}".format(angle, self.__min_degrees))
-            elif angle < self.__min_degrees:
+            elif angle > self.__max_degrees:
                 raise AssertionError("Rotation out of Bounds: cur: {} > max: {}".format(angle, self.__max_degrees))
             else:
                 self.__queue.put(angle)
@@ -112,30 +112,34 @@ class _Servo:
 
     # performs actual rotation to a given angle
     def __run_rotation(self, angle):
-        next_angle = _kit.servo[self.__channel_number].angle
+        if _kit.servo[self.__channel_number].angle < 0:
+            _kit.servo[self.__channel_number].angle = 0
+        elif _kit.servo[self.__channel_number].angle > 180:
+            _kit.servo[self.__channel_number].angle = 180
+        cur_angle = _kit.servo[self.__channel_number].angle
         # calculate delta betwe      en current angle and destined angle
-        delta = angle - _kit.servo[self.__channel_number].angle
+        delta = angle - cur_angle
 
         # divide delta in steps witch will be added on the current angle until the destined angle is reached
         # Each time, moving and waiting are performed in an additional Thread.
         # It calculates the next angle in the meantime and then waits for the movement and waiting to be finished
         for _ in range(int(abs(delta) / cons.STEP_CONTROL.SIZE)):
             if delta < 0:
-                next_angle -= cons.STEP_CONTROL.SIZE
+                cur_angle -= cons.STEP_CONTROL.SIZE
             else:
-                next_angle += cons.STEP_CONTROL.SIZE
+                cur_angle += cons.STEP_CONTROL.SIZE
             if self.__clear_queue:
                 return
-            self.__run_step(angle)
+            self.__step_to(cur_angle)
         if self.__clear_queue:
             return
         if delta % cons.STEP_CONTROL.SIZE != 0:
-            self.__run_step(angle)
+            self.__step_to(cur_angle)
         if self.__print_rotations:
             print("servo {} performed movement to: {}".format(self.__class__.__name__[1:],
                                                               _kit.servo[self.__channel_number].angle))
 
-    def __run_step(self, angle):
+    def __step_to(self, angle):
         _kit.servo[self.__channel_number].angle = angle
         time.sleep(cons.STEP_CONTROL.TIME)
 
@@ -205,9 +209,6 @@ class _Base(_Servo):
         alpha = degrees(atan2(y, x))
         degree = (alpha + 360) % 360
 
-        # only possible if robot can rotation to negative degree
-        if degree > cons.BASE.MAX or degree < cons.BASE.MIN:
-            raise AssertionError("servo can't turn to this point")
         self.rotate(degree)
         return self
 
@@ -352,12 +353,10 @@ class _Eezybot:
     def __key_listener(self):
         def bounds_check(angle, min, max):
             if angle < min:
-                print("Rotation out of Bounds: cur: {} < min: {}".format(angle, min))
-                return False
+                return min
             elif angle > max:
-                print("Rotation out of Bounds: cur: {} > max: {}".format(angle, max))
-                return False
-            return True
+                return max
+            return angle
 
         step_size = cons.MANUEL_CONTROL.STEP
         while self.is_running:
@@ -383,36 +382,28 @@ class _Eezybot:
 
             if str(key) == 'q':
                 angle = self.base.wait().get_rotation() + step_size
-                if bounds_check(angle, cons.BASE.MIN, cons.BASE.MAX):
-                    self.base.rotate(angle)
+                self.base.rotate(bounds_check(angle, cons.BASE.MIN, cons.BASE.MAX))
             elif str(key) == 'a':
                 angle = self.base.wait().get_rotation() - step_size
-                if bounds_check(angle, cons.BASE.MIN, cons.BASE.MAX):
-                    self.base.rotate(angle)
+                self.base.rotate(bounds_check(angle, cons.BASE.MIN, cons.BASE.MAX))
             elif str(key) == 'e':
                 angle = self.verticalArm.wait().get_rotation() + step_size
-                if bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX):
-                    self.verticalArm.rotate(angle)
+                self.verticalArm.rotate(bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX))
             elif str(key) == 'd':
                 angle = self.verticalArm.wait().get_rotation() - step_size
-                if bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX):
-                    self.verticalArm.rotate(angle)
+                self.verticalArm.rotate(bounds_check(angle, cons.VERTICAL.MIN, cons.VERTICAL.MAX))
             elif str(key) == 'w':
                 angle = self.horizontalArm.wait().get_rotation() + step_size
-                if bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX):
-                    self.horizontalArm.rotate(angle)
+                self.horizontalArm.rotate(bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX))
             elif str(key) == 's':
                 angle = self.horizontalArm.wait().get_rotation() - step_size
-                if bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX):
-                    self.horizontalArm.rotate(angle)
+                self.horizontalArm.rotate(bounds_check(angle, cons.HORIZONTAL.MIN, cons.HORIZONTAL.MAX))
             elif str(key) == 'r':
                 angle = self.clutch.wait().get_rotation() + step_size
-                if bounds_check(angle, cons.CLUTCH.MIN, cons.CLUTCH.MAX):
-                    self.clutch.rotate(angle)
+                self.clutch.rotate(bounds_check(angle, cons.CLUTCH.MIN, cons.CLUTCH.MAX))
             elif str(key) == 'f':
                 angle = self.clutch.wait().get_rotation() - step_size
-                if bounds_check(angle, cons.CLUTCH.MIN, cons.CLUTCH.MAX):
-                    self.clutch.rotate(angle)
+                self.clutch.rotate(bounds_check(angle, cons.CLUTCH.MIN, cons.CLUTCH.MAX))
             time.sleep(0.1)
 
 
