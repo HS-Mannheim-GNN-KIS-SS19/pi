@@ -1,9 +1,12 @@
-import cv2
-import numpy as np
-import imutils
-from imutils import contours
 import subprocess
-from scripts import detect_shapes_test, raspi_camera
+import sys
+
+import cv2
+import imutils
+import numpy as np
+from imutils import contours
+
+DEBUG = True
 
 
 def nothing(x):
@@ -38,15 +41,15 @@ def _old_transform(image, sensitivity, min_dist_between_circles, thres, ratio):
     return image, reduced
 
 
-def find_marbles(image):
+def find_marbles(image, color_lower, color_upper):
+    print("lower " + str(color_lower))
+    print("upper " + str(color_lower))
     if image.shape != (256, 256, 3):
         image = cv2.resize(image, (256, 256))
 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    lower_blue = np.array([100, 0, 0])
-    upper_blue = np.array([255, 255, 255])
 
-    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    mask = cv2.inRange(hsv, color_lower, color_upper)
     res = cv2.bitwise_and(image, image, mask=mask)
     res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
 
@@ -64,7 +67,7 @@ def find_marbles(image):
         x, y, radius = int(x), int(y), int(radius)
         cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
         cv2.circle(image, (x, y), radius, (255, 0, 0), 2)
-        detected_marbles.append((x, y))
+        detected_marbles.append((x, y, radius))
 
     return detected_marbles
 
@@ -99,18 +102,21 @@ def _old_main():
     # cv2.imwrite("output.png", image)
 
 
-def detect_with_python2():
+def detect_with_python2(color_lower, color_upper):
     python = 'python2'
-    completed_process = subprocess.run([python, 'detect_shapes.py'], capture_output=True)
+    completed_process = subprocess.run([python, 'detect_shapes.py', '"' + str(color_lower) + '"', '"' + str(color_upper) + '"'])
     # parse list string to list object
+    print(completed_process.stdout)
     return eval(completed_process.stdout)
 
 
 # called when executed directly
 if __name__ == '__main__':
-    if detect_shapes_test.DEBUG:
-        image = cv2.imread('images/pitest.jpg')
+    if DEBUG:
+        image = cv2.imread('../images/pitest.jpg')
     else:
+        from scripts import raspi_camera
+
         image = raspi_camera.picture()
 
-    print(find_marbles(image))
+    print(find_marbles(image, eval(sys.argv[1]), eval(sys.argv[2])))

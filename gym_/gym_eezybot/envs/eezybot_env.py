@@ -5,6 +5,7 @@ from scripts.detect_shapes import *
 from scripts.constants import *
 import eezybot_util
 
+PRINT_DEBUG_MSGS = True
 
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -76,7 +77,7 @@ class EezybotEnv(gym.Env):
 
         coords = find_marbles(self.image)
 
-        if detect_shapes_test.PRINT_DEBUG_MSGS:
+        if PRINT_DEBUG_MSGS:
             print('found {} marbles at {}'.format(len(coords), coords))
 
             print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))

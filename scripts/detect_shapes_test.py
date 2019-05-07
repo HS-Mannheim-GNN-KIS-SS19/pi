@@ -1,15 +1,14 @@
 import time
-from scripts.detect_shapes import *
 
-DEBUG = True
-PRINT_DEBUG_MSGS = True
+from detect_shapes import *
+
 
 def main():
     while True:
         start_time = time.time()
 
         image = None
-        coords = detect_with_python2()
+        coords = detect_with_python2((100, 0, 0), (255, 255, 255))
 
         # image = cv2.imread('pitest.jpg')
         # coords = find_marbles(image)
