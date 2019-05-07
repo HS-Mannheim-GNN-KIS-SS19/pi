@@ -2,7 +2,7 @@ import time
 from scripts.detect_shapes import *
 
 DEBUG = True
-
+PRINT_DEBUG_MSGS = True
 
 def main():
     while True:
