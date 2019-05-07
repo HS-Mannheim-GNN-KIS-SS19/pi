@@ -113,9 +113,9 @@ def detect_with_python2(color_lower, color_upper):
 # called when executed directly
 if __name__ == '__main__':
     if DEBUG:
-        image = cv2.imread('../images/pitest.jpg')
+        image = cv2.imread('images/pitest.jpg')
     else:
-        from scripts import raspi_camera
+        import raspi_camera
 
         image = raspi_camera.picture()
 

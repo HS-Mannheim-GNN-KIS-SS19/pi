@@ -1,8 +1,7 @@
 import time
 import gym
 from gym import spaces
-from scripts.detect_shapes import *
-from scripts.constants import *
+from detect_shapes import *
 import eezybot_util
 
 PRINT_DEBUG_MSGS = True
