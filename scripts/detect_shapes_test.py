@@ -1,7 +1,5 @@
-import cv2
-import numpy as np
 import time
-from detect_shapes import *
+from scripts.detect_shapes import *
 
 DEBUG = True
 

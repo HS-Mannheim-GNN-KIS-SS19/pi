@@ -1,6 +1,6 @@
 from time import sleep
-from eezybotServoController import eezybot
-from constants import *
+from scripts.eezybotServoController import eezybot
+from scripts.constants import *
 
 
 def servo_test_max():

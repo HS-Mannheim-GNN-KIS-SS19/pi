@@ -3,7 +3,7 @@ import numpy as np
 import imutils
 from imutils import contours
 import subprocess
-import main
+from scripts import detect_shapes_test, raspi_camera
 
 
 def nothing(x):
@@ -70,7 +70,7 @@ def find_marbles(image):
 
 
 def _old_main():
-    image = cv2.imread('handytest.jpg')
+    image = cv2.imread('images/handytest.jpg')
     image_copy = image.copy()
     cv2.namedWindow('image')
 
@@ -108,10 +108,9 @@ def detect_with_python2():
 
 # called when executed directly
 if __name__ == '__main__':
-    if main.DEBUG:
-        image = cv2.imread('pitest.jpg')
+    if detect_shapes_test.DEBUG:
+        image = cv2.imread('images/pitest.jpg')
     else:
-        import raspi_camera
         image = raspi_camera.picture()
 
     print(find_marbles(image))

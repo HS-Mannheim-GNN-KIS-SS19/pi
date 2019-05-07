@@ -1,7 +1,7 @@
 import threading
 import time
 import sys
-import constants as cons
+from scripts import constants as cons
 
 import adafruit_servokit
 

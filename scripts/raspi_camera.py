@@ -21,6 +21,6 @@ def picture():
     image = raw_capture.array
 
     if image is None:
-        raise "no image"
+        raise AssertionError("no image")
 
     return image
