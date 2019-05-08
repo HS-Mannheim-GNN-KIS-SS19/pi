@@ -41,6 +41,12 @@ def _old_transform(image, sensitivity, min_dist_between_circles, thres, ratio):
     return image, reduced
 
 
+# TODO implement me plzz
+def calculate_distance_to_arm(image):
+    x, y = 0, 0
+    return x, y
+
+
 def find_marbles(image, color_lower, color_upper):
     print("lower " + str(color_lower))
     print("upper " + str(color_lower))
@@ -104,7 +110,8 @@ def _old_main():
 
 def detect_with_python2(color_lower, color_upper):
     python = 'python2'
-    completed_process = subprocess.run([python, 'detect_shapes.py', '"' + str(color_lower) + '"', '"' + str(color_upper) + '"'])
+    completed_process = subprocess.run(
+        [python, 'detect_shapes.py', '"' + str(color_lower) + '"', '"' + str(color_upper) + '"'])
     # parse list string to list object
     print(completed_process.stdout)
     return eval(completed_process.stdout)

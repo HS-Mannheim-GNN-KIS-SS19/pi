@@ -5,6 +5,7 @@ from detect_shapes import *
 import eezybot_util
 
 PRINT_DEBUG_MSGS = True
+use_python_2 = False
 
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -34,15 +35,18 @@ class EezybotEnv(gym.Env):
         # Representation of our models current state, initial state is set in reset()
         self.state = None
 
+        self.last_distance = float('inf')
+
         # Live-view image
         self.image = None
 
         # Coordinate min/maxs
+        # TODO: set to smallest/biggest difference from grip to marble
         self.min_input = 0
         self.max_input = 0
 
         # Discrete(n) is a set from 0 to n-1. We have n different actions our model can take.
-        # Usually 8, each servo has 2 directions
+        # Usually 6, each servo has 2 directions (not using clutch servo)
         self.action_space = spaces.Discrete(3 * 2)
 
         # A R^n space which describes all valid inputs our model knows
@@ -50,6 +54,24 @@ class EezybotEnv(gym.Env):
 
         self.reward_range = (-float('inf'), float('inf'))
         self.episode_over = False
+
+    def _take_action(self, action):
+        # action is which servo to move
+        # 0,1 is servo 0 (+/-)
+        # 2,3 is servo 1 (...)
+        action = action // 2
+
+        # factor is in which direction to move
+        # even numbers are positive direction
+        factor = -1
+        if action % 2 == 0:
+            factor = 1
+
+        eezybot_util.move(action, 1 * factor)
+
+    """
+    ----------- Api methods below here -----------
+    """
 
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
@@ -68,13 +90,17 @@ class EezybotEnv(gym.Env):
 
         start_time = time.time()
 
-        # coords = detect_with_python2()
+        # move the arm
+        self._take_action(action)
 
-        self.image = cv2.imread('../images/pitest.jpg')
-        if self.image is None:
-            self.image = cv2.imread("images/pitest.jpg")
+        if use_python_2:
+            coords = detect_with_python2()
+        else:
+            self.image = cv2.imread('../images/pitest.jpg')
+            if self.image is None:
+                self.image = cv2.imread("images/pitest.jpg")
 
-        coords = find_marbles(self.image)
+            coords = find_marbles(self.image)
 
         if PRINT_DEBUG_MSGS:
             print('found {} marbles at {}'.format(len(coords), coords))
@@ -82,26 +108,41 @@ class EezybotEnv(gym.Env):
             print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))
             print('----------------')
 
-        self._take_action(action)
-        reward = self._get_reward()
-        ob = self._get_state()
+        # update state
+        # take first found tuple for now
+        x, y = coords[0]
+        distance = calculate_distance_to_arm(self.image)
+        self.state = ((x, y), distance)
 
-        return ob, reward, self.episode_over, {}
+        # is done?
+        self.episode_over = distance < 1.0
+
+        # calculate reward
+        reward = 1.0 if abs(distance) < abs(self.last_distance) else 0.0
+
+        self.last_distance = distance
+
+        return self.state, reward, self.episode_over, {}
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
          Returns:
              observation (object): the initial observation.
          """
-        # targeted marble coords
-        x, y = 0, 0
+        if use_python_2:
+            coords = detect_with_python2()
+        else:
+            self.image = cv2.imread('../images/pitest.jpg')
+            if self.image is None:
+                self.image = cv2.imread("images/pitest.jpg")
+            coords = find_marbles(self.image)
 
-        distance = 0
+        x, y = coords[0]
 
         # Initial state
-        self.state = ((x, y), distance)
+        self.state = ((x, y), float('inf'))
 
-        return np.array(self.state)
+        return self.state
 
     def render(self, mode='human', close=False):
         """Renders the environment.
@@ -126,6 +167,8 @@ class EezybotEnv(gym.Env):
         if self.image is not None:
             cv2.imshow('live view', self.image)
             cv2.waitKey(1)
+        else:
+            print("current state: {}".format(self.state))
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
@@ -148,48 +191,6 @@ class EezybotEnv(gym.Env):
               this won't be true if seed=None, for example.
         """
         return [seed]
-
-    """
-    ----------- Own, non-api methods below here -----------
-    """
-
-    def _take_action(self, action):
-        # action is which servo to move
-        # 0,1 is servo 0 (+/-)
-        # 2,3 is servo 1 (...)
-        action = action // 2
-
-        ll = [(1, 2, 3), (2, 3, 4)]
-        a = [x for x in ll if x[2] == max([x[2] for x in ll])]
-
-        # factor is in which direction to move
-        # even numbers are positive direction
-        factor = -1
-        if action % 2 == 0:
-            factor = 1
-
-        eezybot_util.move(action, 1 * factor)
-
-    def _get_state(self):
-        """
-                Get
-                the
-                observation.
-        """
-        ob = [self.TOTAL_TIME_STEPS - self.curr_step]
-        return ob
-
-    def _get_reward(self):
-        """
-        Reward is given
-        for XY. """
-
-        if "self.status" == "xyz":
-            return 1
-        elif "self.status" == "abc":
-            return self.somestate ** 2
-        else:
-            return 0
 
 
 if __name__ == '__main__':
