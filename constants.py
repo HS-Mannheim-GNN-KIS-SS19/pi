@@ -1,3 +1,5 @@
+USE_FAKE_CONTROLLER = False
+
 class STEP_CONTROL:
     SIZE = 1
     TIME = 0.02
