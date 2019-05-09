@@ -1,6 +1,6 @@
 import time
 
-from detect_shapes import *
+from image_processing import *
 
 
 def main():
@@ -8,7 +8,7 @@ def main():
         start_time = time.time()
 
         image = None
-        coords = detect_with_python2((100, 0, 0), (255, 255, 255))
+        coords = _detect_with_python2((100, 0, 0), (255, 255, 255))
 
         # image = cv2.imread('pitest.jpg')
         # coords = find_marbles(image)

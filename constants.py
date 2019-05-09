@@ -14,7 +14,7 @@ class HORIZONTAL:
     CHANNEL = 1
     MIN = 0
     DEFAULT = 0
-    MAX = 135
+    MAX = 125
 
 
 class VERTICAL:
@@ -28,12 +28,20 @@ class CLUTCH:
     CHANNEL = 3
     MIN = 0
     DEFAULT = 60
-    MAX = 170
+    MAX = 180
     GRAB = 45
 
 
 class MANUEL_CONTROL:
     STEP = 5
+
+
+class IMAGE_PROCESSING:
+    use_python_2 = False
+
+
+class ENV:
+    PRINT_DEBUG_MSGS = True
 
 # STEP_SIZE = 0.5
 # STEP_TIME = 0.005

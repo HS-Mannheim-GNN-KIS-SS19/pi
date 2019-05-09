@@ -3,19 +3,19 @@ import time
 import sys
 import constants as cons
 
-import adafruit_servokit
+# import adafruit_servokit
 
-# # Dummy Class for Testing
-# class adafruit_servokit:
-#     class ServoValue:
-#         def __init__(self):
-#             self.angle = 0
-#
-#     servo = [ServoValue(), ServoValue(), ServoValue(), ServoValue()]
-#
-#     @staticmethod
-#     def ServoKit(channels=8):
-#         return adafruit_servokit
+# Dummy Class for Testing
+class adafruit_servokit:
+    class ServoValue:
+        def __init__(self):
+            self.angle = 0
+
+    servo = [ServoValue(), ServoValue(), ServoValue(), ServoValue()]
+
+    @staticmethod
+    def ServoKit(channels=8):
+        return adafruit_servokit
 
 
 # Set channels to the number of servo channels on your kit.

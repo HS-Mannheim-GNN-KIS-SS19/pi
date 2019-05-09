@@ -1,11 +1,11 @@
 import time
 import gym
 from gym import spaces
-from detect_shapes import *
+import numpy as np
+from image_processing import *
 import eezybot_util
+from constants import ENV
 
-PRINT_DEBUG_MSGS = True
-use_python_2 = False
 
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -93,16 +93,9 @@ class EezybotEnv(gym.Env):
         # move the arm
         self._take_action(action)
 
-        if use_python_2:
-            coords = detect_with_python2()
-        else:
-            self.image = cv2.imread('../images/pitest.jpg')
-            if self.image is None:
-                self.image = cv2.imread("images/pitest.jpg")
+        coords = get_absolute_marble_positions(cv2.imread('../images/pitest.jpg'))
 
-            coords = find_marbles(self.image)
-
-        if PRINT_DEBUG_MSGS:
+        if ENV.PRINT_DEBUG_MSGS:
             print('found {} marbles at {}'.format(len(coords), coords))
 
             print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))
@@ -129,13 +122,7 @@ class EezybotEnv(gym.Env):
          Returns:
              observation (object): the initial observation.
          """
-        if use_python_2:
-            coords = detect_with_python2()
-        else:
-            self.image = cv2.imread('../images/pitest.jpg')
-            if self.image is None:
-                self.image = cv2.imread("images/pitest.jpg")
-            coords = find_marbles(self.image)
+        coords = get_absolute_marble_positions(cv2.imread('../images/pitest.jpg'))
 
         x, y = coords[0]
 
