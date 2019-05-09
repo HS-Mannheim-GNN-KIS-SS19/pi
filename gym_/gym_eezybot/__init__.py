@@ -6,7 +6,7 @@ from gym.envs.registration import register
 logger = logging.getLogger(__name__)
 
 
-# delete if it's registered
+# delete if it's already registered
 env_name = 'EezybotEnv-v0'
 if env_name in gym.envs.registry.env_specs:
     del gym.envs.registry.env_specs[env_name]

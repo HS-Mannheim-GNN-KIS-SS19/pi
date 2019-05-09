@@ -41,19 +41,21 @@ class EezybotEnv(gym.Env):
         self.image = None
 
         # Coordinate min/maxs
-        # TODO: set to smallest/biggest difference from grip to marble
+        # TODO: set to smallest/biggest distance from grip to marble
         self.min_input = 0
-        self.max_input = 0
+        self.max_input = 250
 
         # Discrete(n) is a set from 0 to n-1. We have n different actions our model can take.
         # Usually 6, each servo has 2 directions (not using clutch servo)
-        self.action_space = spaces.Discrete(3 * 2)
+        self.action_space = spaces.Discrete(3 * 180)
 
         # A R^n space which describes all valid inputs our model knows
-        self.observation_space = spaces.Box(self.min_input, self.max_input, shape=(2,), dtype=np.float32)
+        self.observation_space = spaces.Box(self.min_input, self.max_input, shape=(4,), dtype=np.float32)
 
         self.reward_range = (-float('inf'), float('inf'))
         self.episode_over = False
+
+        self.reset()
 
     def _take_action(self, action):
         # action is which servo to move
@@ -67,7 +69,7 @@ class EezybotEnv(gym.Env):
         if action % 2 == 0:
             factor = 1
 
-        eezybot_util.move(action, 1 * factor)
+        eezybot_util.move_once(action, 1 * factor)
 
     """
     ----------- Api methods below here -----------
@@ -103,15 +105,21 @@ class EezybotEnv(gym.Env):
 
         # update state
         # take first found tuple for now
-        x, y = coords[0]
+        x, y, z = coords[0]
+
+        # distance is a tuple, 0 = distance horizontally, 1 = distance vertically
         distance = calculate_distance_to_arm(self.image)
-        self.state = ((x, y), distance)
+
+        self.state = ((x, y, z), distance)
 
         # is done?
-        self.episode_over = distance < 1.0
+        self.episode_over = distance[0] < 1.0 and distance[1] < 1.0
 
         # calculate reward
-        reward = 1.0 if abs(distance) < abs(self.last_distance) else 0.0
+        if abs(distance[0]) + abs(distance[1]) < abs(distance[0]) + abs(distance[1]):
+            reward = 1.0
+        else:
+            reward = 0.0
 
         self.last_distance = distance
 
@@ -124,10 +132,10 @@ class EezybotEnv(gym.Env):
          """
         coords = get_absolute_marble_positions(cv2.imread('../images/pitest.jpg'))
 
-        x, y = coords[0]
+        x, y, z = coords[0]
 
         # Initial state
-        self.state = ((x, y), float('inf'))
+        self.state = ((x, y, z), float('inf'))
 
         return self.state
 

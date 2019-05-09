@@ -41,9 +41,10 @@ def get_marble_position_relative_to_eezybot(image):
 
 
 # TODO implement me plzz
-def calculate_distance_to_arm(image):
-    x, y = 0, 0
-    return x, y
+def calculate_distance_to_arm(image) -> (float, float):
+    import random as r
+    horizontal, vertical = r.random() * 100, r.random() * 100
+    return horizontal, vertical
 
 
 def _find_marbles(image, color_lower, color_upper):
@@ -94,5 +95,9 @@ def get_absolute_marble_positions(image):
         if image is None:
             image = cv2.imread("images/pitest.jpg")
 
-        coords = _find_marbles(image)
+    import numpy as np
+    lower_blue = np.array([100, 0, 0])
+    upper_blue = np.array([255, 255, 255])
+    coords = _find_marbles(image, lower_blue, upper_blue)
+
     return coords
