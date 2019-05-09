@@ -31,7 +31,8 @@ class CLUTCH:
     MIN = 0
     DEFAULT = 60
     MAX = 180
-    GRAB = 45
+    GRAB = 35
+    RELEASE = 70
 
 
 class MANUEL_CONTROL:

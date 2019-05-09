@@ -249,6 +249,9 @@ class _Clutch(_Servo):
     def grab(self):
         return self.rotate(cons.CLUTCH.GRAB)
 
+    def release(self):
+        return self.rotate(cons.CLUTCH.RELEASE)
+
 
 class _Eezybot:
     __instance = None
