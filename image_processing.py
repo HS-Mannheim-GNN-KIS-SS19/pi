@@ -3,6 +3,7 @@ import cv2
 import imutils
 from imutils import contours
 from constants import IMAGE_PROCESSING
+from position import Position
 
 
 def nothing(x):
@@ -31,17 +32,8 @@ def _resolve_marble_pos_relative_to_eezybot(marble_pos_relative_to_field, eezybo
     return []
 
 
-def get_marble_position_relative_to_eezybot(image):
-    stretch = _get_stretch_factor(image)
-    eezybot_pos_relative_to_field = list(
-        map(lambda pos: [x * y for x, y in zip(pos, stretch)], _get_absolute_eezybot_position(image)))
-    marble_pos_relative_to_field = list(
-        map(lambda pos: [stretch * coord for coord in pos], get_absolute_marble_positions(image)))
-    return _resolve_marble_pos_relative_to_eezybot(eezybot_pos_relative_to_field, marble_pos_relative_to_field)
-
-
 # TODO implement me plzz
-def calculate_distance_to_arm(image) -> (float, float):
+def _calculate_distance_to_arm(image) -> (float, float):
     import random as r
     horizontal, vertical = r.random() * 100, r.random() * 100
     return horizontal, vertical
@@ -87,7 +79,7 @@ def _detect_with_python2(color_lower, color_upper):
     return eval(completed_process.stdout)
 
 
-def get_absolute_marble_positions(image):
+def _get_absolute_marble_positions(image):
     if IMAGE_PROCESSING.use_python_2:
         coords = _detect_with_python2()
     else:
@@ -101,3 +93,20 @@ def get_absolute_marble_positions(image):
     coords = _find_marbles(image, lower_blue, upper_blue)
 
     return coords
+
+
+"""Program Interface"""
+
+
+def get_marble_position_relative_to_eezybot(image):
+    stretch = _get_stretch_factor(image)
+    eezybot_pos_relative_to_field = list(
+        map(lambda pos: [x * y for x, y in zip(pos, stretch)], _get_absolute_eezybot_position(image)))
+    marble_pos_relative_to_field = list(
+        map(lambda pos: [stretch * coord for coord in pos], _get_absolute_marble_positions(image)))
+    return _resolve_marble_pos_relative_to_eezybot(eezybot_pos_relative_to_field, marble_pos_relative_to_field)
+
+
+# TODO implement me plzz
+def get_arm_position_relative_to_eezybot(image):
+    return Position(0, 0)

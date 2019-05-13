@@ -1,16 +1,30 @@
-import time
+from enum import Enum
+
+import cv2
 import gym
 from gym import spaces
 import numpy as np
-from image_processing import *
-import eezybot_util
-from constants import ENV
+from image_processing_interface import get_arm, get_marble, get_destination
+from eezybot_servo_controller import eezybot
+
+
+class Target(Enum):
+    MARBLE = 0
+    DESTINATION = 1
+    FIXED_TARGET = 2
+
+
+# TODO
+def take_image():
+    return cv2.imread('../images/pitest.jpg')
 
 
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self):
+    def __init__(self, kwargs):
+        self.target_type = kwargs["target"]
+        self.fixed_target = kwargs["is_fixed"]
         """The main OpenAI Gym class. It encapsulates an environment with
          arbitrary behind-the-scenes dynamics. An environment can be
          partially or fully observed.
@@ -32,49 +46,47 @@ class EezybotEnv(gym.Env):
          non-underscored versions are wrapper methods to which we may add
          functionality over time.
          """
-        # Representation of our models current state, initial state is set in reset()
-        self.state = None
 
-        self.last_distance = float('inf')
-
-        # Live-view image
-        self.image = None
-
-        # Coordinate min/maxs
-        # TODO: set to smallest/biggest distance from grip to marble
-        self.min_input = 0
-        self.max_input = 250
-
-        # Discrete(n) is a set from 0 to n-1. We have n different actions our model can take.
-        # Usually 6, each servo has 2 directions (not using clutch servo)
-        self.action_space = spaces.Discrete(3 * 180)
-
+        # Each action is a Tuple containing 3 angles.
+        # Angle Range is 180 for every Servo with steps of 1 degree,
+        # therefore 180**3 = 5832000 possible actions!!!!!!!!!!
+        self.action_space = spaces.Discrete(180 ** 3)
         # A R^n space which describes all valid inputs our model knows
-        self.observation_space = spaces.Box(self.min_input, self.max_input, shape=(4,), dtype=np.float32)
+        self.observation_space = spaces.Box(self.min_distance_to_eezybot, self.max_distance_to_eezybot, shape=(4,),
+                                            dtype=np.float32)
 
         self.reward_range = (-float('inf'), float('inf'))
+
+        # Representation of our models current state, initial state is set in reset()
         self.episode_over = False
 
+        # Coordinate min/maxs
+        # TODO: set to smallest/biggest distance from eezybot to marble
+        self.min_distance_to_eezybot = 0
+        self.max_distance_to_eezybot = int('inf')
+
+        # Discrete(n) is a set from 0 to n-1. We have n different actions our model can take.
+        self.image = None
+        self.state = None
         self.reset()
 
-    def _take_action(self, action):
-        # action is which servo to move
-        # 0,1 is servo 0 (+/-)
-        # 2,3 is servo 1 (...)
-        action = action // 2
+    def _resolve_target(self, image):
+        if self.target_type is Target.FIXED_TARGET:
+            return self.fixed_target
+        elif self.target_type is Target.MARBLE:
+            return get_marble(image)[0]
+        else:
+            return get_destination(image)
 
-        # factor is in which direction to move
-        # even numbers are positive direction
-        factor = -1
-        if action % 2 == 0:
-            factor = 1
-
-        eezybot_util.move_once(action, 1 * factor)
+    def _getCurrentState(self):
+        image = take_image()
+        return self._resolve_target(image), get_arm(image), image
 
     """
     ----------- Api methods below here -----------
     """
 
+    # TODO
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -88,40 +100,12 @@ class EezybotEnv(gym.Env):
             done (bool): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
+
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
-
-        start_time = time.time()
-
-        # move the arm
-        self._take_action(action)
-
-        coords = get_absolute_marble_positions(cv2.imread('../images/pitest.jpg'))
-
-        if ENV.PRINT_DEBUG_MSGS:
-            print('found {} marbles at {}'.format(len(coords), coords))
-
-            print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))
-            print('----------------')
-
-        # update state
-        # take first found tuple for now
-        x, y, z = coords[0]
-
-        # distance is a tuple, 0 = distance horizontally, 1 = distance vertically
-        distance = calculate_distance_to_arm(self.image)
-
-        self.state = ((x, y, z), distance)
-
-        # is done?
-        self.episode_over = distance[0] < 1.0 and distance[1] < 1.0
-
-        # calculate reward
-        if abs(distance[0]) + abs(distance[1]) < abs(distance[0]) + abs(distance[1]):
-            reward = 1.0
-        else:
-            reward = 0.0
-
-        self.last_distance = distance
+        oldMarblePos, oldArmPos = self.state[:-1]
+        self.state = self._getCurrentState()
+        marblePos, armPos = self.state[:-1]
+        reward = None
 
         return self.state, reward, self.episode_over, {}
 
@@ -130,14 +114,9 @@ class EezybotEnv(gym.Env):
          Returns:
              observation (object): the initial observation.
          """
-        coords = get_absolute_marble_positions(cv2.imread('../images/pitest.jpg'))
-
-        x, y, z = coords[0]
-
         # Initial state
-        self.state = ((x, y, z), float('inf'))
-
-        return self.state
+        eezybot.start.to_default_and_shutdown()
+        return self._getCurrentState()
 
     def render(self, mode='human', close=False):
         """Renders the environment.
@@ -159,8 +138,8 @@ class EezybotEnv(gym.Env):
         Args:
             mode (str): the mode to render with
         """
-        if self.image is not None:
-            cv2.imshow('live view', self.image)
+        if self.state[-1] is not None:
+            cv2.imshow('live view', self.state[-1])
             cv2.waitKey(1)
         else:
             print("current state: {}".format(self.state))
@@ -170,7 +149,7 @@ class EezybotEnv(gym.Env):
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        pass
+        eezybot.start.to_default_and_shutdown(interrupt=True)
 
     def seed(self, seed=None):
         """Sets the seed for this env's random number generator(s).
@@ -186,7 +165,3 @@ class EezybotEnv(gym.Env):
               this won't be true if seed=None, for example.
         """
         return [seed]
-
-
-if __name__ == '__main__':
-    EezybotEnv().step(0)

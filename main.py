@@ -1,12 +1,10 @@
-import image_processing
-import move_to
 
-from eezybotServoController import eezybot
+from eezybot_servo_controller import eezybot
+from gym_.gym_eezybot.envs.eezybot_env import Target
+import ai_inerface
 
 while True:
-    x, y = image_processing.find_marbles()[0]
-    move_to.move_to(x, y)
+    ai_inerface.move_to(Target.MARBLE)
     eezybot.clutch.grab()
-    x, y = image_processing.find_destination()
-    move_to.move_to(x, y)
+    ai_inerface.move_to(Target.DESTINATION)
     eezybot.clutch.release()

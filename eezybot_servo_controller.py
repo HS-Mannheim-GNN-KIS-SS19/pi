@@ -3,7 +3,7 @@ import time
 import sys
 import constants as cons
 
-if(not cons.USE_FAKE_CONTROLLER):
+if not cons.USE_FAKE_CONTROLLER:
     import adafruit_servokit
 else:
     # Dummy Class for Testing
@@ -17,7 +17,6 @@ else:
         @staticmethod
         def ServoKit(channels=8):
             return adafruit_servokit
-
 
 # Set channels to the number of servo channels on your kit.
 # 8 for FeatherWing, 16 for Shield/HAT/Bonnet.
@@ -52,7 +51,7 @@ class _Servo:
         self.__queue = Queue()
 
         # Flags
-        self.__wait_for_other_servo = None  # -> Type: Servo
+        self.__wait_for_other_servos_queue = Queue()
         self.__print_rotations = False
         self.__clear_queue = False
         self.__block_rotate_method = False
@@ -66,10 +65,6 @@ class _Servo:
             self.__rotation_controller_thread = threading.Thread(target=self.__rotation_control, daemon=True)
             self.__rotation_controller_thread.start()
         return self
-
-    # resolves degree from relative value
-    def _resolveDegree(self, value):
-        return self.__min_degrees + int(value * (self.__max_degrees - self.__min_degrees))
 
     # adds new Rotation to given angle to the queue.
     # Movement will be performed through the rotation controller calling the __run_rotation(angle) function
@@ -86,6 +81,10 @@ class _Servo:
                 self.__queue.put(angle)
         return self
 
+    # resolves degree from relative value
+    def _resolveDegree(self, value):
+        return self.__min_degrees + int(value * (self.__max_degrees - self.__min_degrees))
+
     # resolves absolute angle from given relative value then calls rotate with resolved angle
     def rotate_relative(self, value):
         self.rotate(self._resolveDegree(value))
@@ -95,9 +94,8 @@ class _Servo:
     def __rotation_control(self):
         from queue import Empty
         while not self.__shutdown_rotation_controller:
-            if self.__wait_for_other_servo is not None:
-                self.__wait_for_other_servo.wait()
-                self.__wait_for_other_servo = None
+            while not self.__wait_for_other_servos_queue.empty():
+                self.__wait_for_other_servos_queue.get().wait()
             if self.__clear_queue:
                 self.__clear_queue = False
                 while not self.__queue.empty():
@@ -111,12 +109,16 @@ class _Servo:
             except Empty:
                 pass
 
-    # performs actual rotation to a given angle
-    def __run_rotation(self, angle):
+    # Ensures the Servos current rotation is in Bounds (min: 0, max: 180).
+    def _ensure_in_bounds(self):
         if _kit.servo[self.__channel_number].angle < 0:
             _kit.servo[self.__channel_number].angle = 0
         elif _kit.servo[self.__channel_number].angle > 180:
             _kit.servo[self.__channel_number].angle = 180
+
+    # performs actual rotation to a given angle
+    def __run_rotation(self, angle):
+        self._ensure_in_bounds()
         cur_angle = _kit.servo[self.__channel_number].angle
         # calculate delta betwe      en current angle and destined angle
         delta = angle - cur_angle
@@ -150,8 +152,9 @@ class _Servo:
         return self
 
     # make this Servo wait for another Servo emptying it's queue
-    def wait_for_servo(self, servo):
-        self.__wait_for_other_servo = servo
+    def wait_for_servo(self, *servos):
+        for servo in servos:
+            self.__wait_for_other_servos_queue.put(servo)
         return self
 
     # stops and clears all rotations
@@ -203,16 +206,6 @@ class _Base(_Servo):
             super().__init__(cons.BASE.CHANNEL, cons.BASE.MIN, cons.BASE.DEFAULT, cons.BASE.MAX)
             _Base.__instance = self
 
-    # rotations base to a point relative to the robot
-    def rotate_to(self, x, y):
-        from math import atan2, degrees
-
-        alpha = degrees(atan2(y, x))
-        degree = (alpha + 360) % 360
-
-        self.rotate(degree)
-        return self
-
 
 class _ArmVertical(_Servo):
     __instance = None
@@ -257,7 +250,7 @@ class _Eezybot:
     __instance = None
 
     @staticmethod
-    def getInstance():  # -> '_Eezybot':
+    def getInstance():
         if _Eezybot.__instance is None:
             _Eezybot.__instance = _Eezybot()
         return _Eezybot.__instance
@@ -268,7 +261,8 @@ class _Eezybot:
         self.__instance = self
 
         # Components
-        self.base = _Base()
+        base = _Base()
+        self.base = base
         self.verticalArm = _ArmVertical()
         self.horizontalArm = _ArmHorizontal()
         self.clutch = _Clutch()
@@ -300,16 +294,16 @@ class _Eezybot:
         return self
 
     # ensures the last rotation of every Servo is to it's default angle.
-    # if interrupt is True, it won't wait for all queued rotations to be performed and 
-    # instead cancels all currently performed rotations and clears the queues 
+    # if interrupt is True, it won't wait for all queued rotations to be performed and
+    # instead cancels all currently performed rotations and clears the queues
     def to_default_and_shutdown(self, interrupt=False):
         return self.shutdown(base_angle=cons.BASE.DEFAULT, vertical_angle=cons.VERTICAL.DEFAULT,
                              horizontal_angle=cons.HORIZONTAL.DEFAULT,
                              clutch_angle=cons.CLUTCH.DEFAULT, interrupt=interrupt)
 
-    # ensures the last rotation of every Servo is to the given parameters
-    # if interrupt is True, it won't wait for all queued rotations to be performed and 
-    # instead cancels all currently performed rotations and clears the queues 
+    # ensures the last rotation of everyAdded Servo is to the given parameters
+    # if interrupt is True, it won't wait for all queued rotations to be performed and
+    # instead cancels all currently performed rotations and clears the queues
     def shutdown(self, base_angle=None, vertical_angle=None, horizontal_angle=None, clutch_angle=None, interrupt=False):
         if not self.is_running:
             raise AssertionError("tried to shutdown not running Eezybot")

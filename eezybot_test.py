@@ -1,5 +1,5 @@
 from time import sleep
-from eezybotServoController import eezybot
+from eezybot_servo_controller import eezybot
 from constants import *
 
 
@@ -30,6 +30,3 @@ testBoth()
 print("ready")
 sleep(10000)
 
-# shoud rotate the base 90 degree
-# eezybot.base.rotate_to(0, 1)
-# eezybot.base.wait()
