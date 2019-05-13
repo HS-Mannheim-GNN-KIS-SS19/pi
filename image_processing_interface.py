@@ -5,7 +5,7 @@ from position import Position
 
 # TODO
 # returns Position of the marble as Position Object
-def get_marble(image):
+def get_marbles(image):
     return np.array([Position(0, 0)])
 
 

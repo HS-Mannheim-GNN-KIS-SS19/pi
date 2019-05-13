@@ -4,7 +4,7 @@ import cv2
 import gym
 from gym import spaces
 import numpy as np
-from image_processing_interface import get_arm, get_marble, get_destination
+from image_processing_interface import get_arm, get_marbles, get_destination
 from eezybot_servo_controller import eezybot
 
 
@@ -74,7 +74,7 @@ class EezybotEnv(gym.Env):
         if self.target_type is Target.FIXED_TARGET:
             return self.fixed_target
         elif self.target_type is Target.MARBLE:
-            return get_marble(image)[0]
+            return get_marbles(image)[0]
         else:
             return get_destination(image)
 
