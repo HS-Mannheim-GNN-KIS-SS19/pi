@@ -5,7 +5,7 @@ import time
 camera = None
 
 
-def picture():
+def take_picture():
     global camera
 
     if camera is None:

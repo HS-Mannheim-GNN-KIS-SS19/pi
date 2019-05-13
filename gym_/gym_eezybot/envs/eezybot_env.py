@@ -6,6 +6,7 @@ from gym import spaces
 import numpy as np
 from image_processing_interface import get_arm, get_marbles, get_destination
 from eezybot_servo_controller import eezybot
+import raspi_camera
 
 
 class Target(Enum):
@@ -14,9 +15,8 @@ class Target(Enum):
     FIXED_TARGET = 2
 
 
-# TODO
-def take_image():
-    return cv2.imread('../images/pitest.jpg')
+def _take_picture():
+    return raspi_camera.take_picture()
 
 
 class EezybotEnv(gym.Env):
@@ -57,7 +57,6 @@ class EezybotEnv(gym.Env):
 
         self.reward_range = (-float('inf'), float('inf'))
 
-        # Representation of our models current state, initial state is set in reset()
         self.episode_over = False
 
         # Coordinate min/maxs
@@ -65,7 +64,6 @@ class EezybotEnv(gym.Env):
         self.min_distance_to_eezybot = 0
         self.max_distance_to_eezybot = int('inf')
 
-        # Discrete(n) is a set from 0 to n-1. We have n different actions our model can take.
         self.image = None
         self.state = None
         self.reset()
@@ -79,8 +77,8 @@ class EezybotEnv(gym.Env):
             return get_destination(image)
 
     def _getCurrentState(self):
-        image = take_image()
-        return self._resolve_target(image), get_arm(image), image
+        self.image = _take_picture()
+        return self._resolve_target(self.image), get_arm(self.image)
 
     """
     ----------- Api methods below here -----------
@@ -102,9 +100,9 @@ class EezybotEnv(gym.Env):
         """
 
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
-        oldMarblePos, oldArmPos = self.state[:-1]
+        oldMarblePos, oldArmPos = self.state
         self.state = self._getCurrentState()
-        marblePos, armPos = self.state[:-1]
+        marblePos, armPos = self.state
         reward = None
 
         return self.state, reward, self.episode_over, {}
@@ -138,8 +136,8 @@ class EezybotEnv(gym.Env):
         Args:
             mode (str): the mode to render with
         """
-        if self.state[-1] is not None:
-            cv2.imshow('live view', self.state[-1])
+        if self.image is not None:
+            cv2.imshow('live view', self.image)
             cv2.waitKey(1)
         else:
             print("current state: {}".format(self.state))
