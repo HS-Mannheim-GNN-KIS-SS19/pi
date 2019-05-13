@@ -8,24 +8,24 @@ IMAGE = None  # cv2.imread('pitest.jpg')
 
 def findMarbles():
     start_time = time.time()
-    coords = get_marbles(IMAGE)
-    print('found {} marbles at {}'.format(len(coords), coords))
+    marbles = get_marbles(IMAGE)
+    print('found {} marbles at {}'.format(len(marbles), marbles))
     print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))
     print('----------------')
 
 
 def findArm():
     start_time = time.time()
-    coords = get_arm(IMAGE)
-    print('found Arm at {}'.format(coords))
+    arm = get_arm(IMAGE)
+    print('found Arm at {}'.format(arm))
     print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))
     print('----------------')
 
 
 def findDestination():
     start_time = time.time()
-    coords = get_destination(IMAGE)
-    print('found Destination at {}'.format(coords))
+    destination = get_destination(IMAGE)
+    print('found Destination at {}'.format(destination))
     print("took {:1.0f} ms for calculations".format((time.time() - start_time) * 1000))
     print('----------------')
 

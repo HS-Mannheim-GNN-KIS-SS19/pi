@@ -1,8 +1,7 @@
-import numpy as np
-
-
-class Position(np.ndarray):
+class Position:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        np.ndarray.__init__(self, [x, y])
+
+    def __format__(self, format):
+        return "x:{}, y:{}".format(self.x, self.y)
