@@ -98,15 +98,15 @@ class EezybotEnv(gym.Env):
     """
 
     def _resolve_reward(self, old_state, new_state):
-        old_dest_pos = old_state[0:1]
-        old_arm_pos = old_state[2:3]
+        old_dest_pos = old_state[0:2]
+        old_arm_pos = old_state[2:4]
         new_dest_pos = new_state[0:1]
-        new_arm_pos = new_state[2:3]
+        new_arm_pos = new_state[2:4]
         return _resolve_distance(old_dest_pos, old_arm_pos) - _resolve_distance(new_dest_pos, new_arm_pos)
 
     def _is_episode_over(self, new_state):
-        new_dest_pos = new_state[0:1]
-        new_arm_pos = new_state[2:3]
+        new_dest_pos = new_state[0:2]
+        new_arm_pos = new_state[2:4]
         return ENV.ERROR_TOLERANCE > _resolve_distance(new_dest_pos, new_arm_pos) > -ENV.ERROR_TOLERANCE
 
     def _take_action(self, action):
