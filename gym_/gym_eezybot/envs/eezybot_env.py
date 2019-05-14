@@ -21,7 +21,7 @@ def _take_picture():
 
 
 def _resolve_distance(pos1, pos2):
-    return np.sqrt((pos1.x - pos2.x) ** 2 + (pos1.x - pos2.y) ** 2)
+    return np.sqrt((pos1[0] - pos2[0]) ** 2 + (pos2[1] - pos2[1]) ** 2)
 
 
 def _get_angle_list():
@@ -89,19 +89,24 @@ class EezybotEnv(gym.Env):
 
     def _getCurrentState(self):
         self.image = _take_picture()
-        return self._resolve_target(self.image), get_arm(self.image)
+        target_pos = self._resolve_target(self.image)
+        arm_pos = get_arm(self.image)
+        return target_pos.x, target_pos.y, arm_pos.x, arm_pos.y
 
     """
     ----------- Api methods below here -----------
     """
 
     def _resolve_reward(self, old_state, new_state):
-        old_dest_pos, old_arm_pos = old_state
-        new_dest_pos, new_arm_pos = new_state
+        old_dest_pos = old_state[0:1]
+        old_arm_pos = old_state[2:3]
+        new_dest_pos = new_state[0:1]
+        new_arm_pos = new_state[2:3]
         return _resolve_distance(old_dest_pos, old_arm_pos) - _resolve_distance(new_dest_pos, new_arm_pos)
 
     def _is_episode_over(self, new_state):
-        new_dest_pos, new_arm_pos = new_state
+        new_dest_pos = new_state[0:1]
+        new_arm_pos = new_state[2:3]
         return ENV.ERROR_TOLERANCE > _resolve_distance(new_dest_pos, new_arm_pos) > -ENV.ERROR_TOLERANCE
 
     def _take_action(self, action):
