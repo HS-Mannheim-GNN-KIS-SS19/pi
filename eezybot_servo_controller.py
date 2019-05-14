@@ -110,16 +110,17 @@ class _Servo:
                 pass
 
     # Ensures the Servos current rotation is in Bounds (min: 0, max: 180).
-    def _ensure_in_bounds(self):
-        if _kit.servo[self.__channel_number].angle < 0:
-            _kit.servo[self.__channel_number].angle = 0
-        elif _kit.servo[self.__channel_number].angle > 180:
-            _kit.servo[self.__channel_number].angle = 180
+    def _ensure_in_bounds(self, angle):
+        if angle < 0:
+            return 0
+        elif angle > 180:
+            return 180
+        else:
+            return angle
 
     # performs actual rotation to a given angle
     def __run_rotation(self, angle):
-        self._ensure_in_bounds()
-        cur_angle = _kit.servo[self.__channel_number].angle
+        cur_angle = self._ensure_in_bounds(_kit.servo[self.__channel_number].angle)
         # calculate delta betwe      en current angle and destined angle
         delta = angle - cur_angle
 
