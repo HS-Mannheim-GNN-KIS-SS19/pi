@@ -278,7 +278,7 @@ class _Eezybot:
         self.clutch.clear_queue()
         return self
 
-    # blocks until all queues were empty.
+    # blocks until all queued movements are performed
     def wait_for_all(self):
         self.base.wait()
         self.verticalArm.wait()
@@ -297,14 +297,14 @@ class _Eezybot:
     # if interrupt is True, it won't wait for all queued rotations to be performed and
     # instead cancels all currently performed rotations and clears the queues
     def to_default_and_shutdown(self, interrupt=False):
-        return self.shutdown(base_angle=cons.BASE.DEFAULT, vertical_angle=cons.VERTICAL.DEFAULT,
-                             horizontal_angle=cons.HORIZONTAL.DEFAULT,
-                             clutch_angle=cons.CLUTCH.DEFAULT, interrupt=interrupt)
+        return self.finish_and_shutdown(base_angle=cons.BASE.DEFAULT, vertical_angle=cons.VERTICAL.DEFAULT,
+                                        horizontal_angle=cons.HORIZONTAL.DEFAULT,
+                                        clutch_angle=cons.CLUTCH.DEFAULT, interrupt=interrupt)
 
     # ensures the last rotation of everyAdded Servo is to the given parameters
     # if interrupt is True, it won't wait for all queued rotations to be performed and
     # instead cancels all currently performed rotations and clears the queues
-    def shutdown(self, base_angle=None, vertical_angle=None, horizontal_angle=None, clutch_angle=None, interrupt=False):
+    def finish_and_shutdown(self, base_angle=None, vertical_angle=None, horizontal_angle=None, clutch_angle=None, interrupt=False):
         if not self.is_running:
             raise AssertionError("tried to shutdown not running Eezybot")
         else:

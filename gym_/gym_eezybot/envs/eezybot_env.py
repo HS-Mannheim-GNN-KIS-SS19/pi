@@ -20,6 +20,10 @@ def _take_picture():
     return raspi_camera.take_picture()
 
 
+def _resolve_distance(pos1, pos2):
+    return np.sqrt((pos1.x - pos2.x) ** 2 + (pos1.x - pos2.y) ** 2)
+
+
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -48,10 +52,7 @@ class EezybotEnv(gym.Env):
          functionality over time.
          """
 
-        # Each action is a Tuple containing 3 angles.
-        # Angle Range is 180 for every Servo with steps of 1 degree,
-        # therefore 180**3 = 5832000 possible actions!!!!!!!!!!
-        self.action_space = spaces.Discrete(180 ** 3)
+        self.action_space = spaces.Discrete(ENV.STEP_SIZE ** 3)
         # A R^n space which describes all valid inputs our model knows
         self.observation_space = spaces.Box(self.min_distance_to_eezybot, self.max_distance_to_eezybot, shape=(4,),
                                             dtype=np.float32)
@@ -85,17 +86,26 @@ class EezybotEnv(gym.Env):
     ----------- Api methods below here -----------
     """
 
-    def _resolve_distance(self, pos1, pos2):
-        return np.sqrt((pos1.x - pos2.x) ** 2 + (pos1.x - pos2.y) ** 2)
-
     def _resolve_reward(self, old_state, new_state):
         old_dest_pos, old_arm_pos = old_state
         new_dest_pos, new_arm_pos = new_state
-        return self._resolve_distance(old_dest_pos, old_arm_pos) - self._resolve_distance(new_dest_pos, new_arm_pos)
+        return _resolve_distance(old_dest_pos, old_arm_pos) - _resolve_distance(new_dest_pos, new_arm_pos)
 
     def _is_episode_over(self, new_state):
         new_dest_pos, new_arm_pos = new_state
-        return ENV.ERROR_TOLERANCE > self._resolve_distance(new_dest_pos, new_arm_pos) > -ENV.ERROR_TOLERANCE
+        return ENV.ERROR_TOLERANCE > _resolve_distance(new_dest_pos, new_arm_pos) > -ENV.ERROR_TOLERANCE
+
+    def _take_action(self, action):
+        angles = []
+        for base_angle in range(ENV.STEP_SIZE):
+            for arm_vertical_angle in range(ENV.STEP_SIZE):
+                for arm_horizontal_angle in range(ENV.STEP_SIZE):
+                    angles.append((base_angle, arm_vertical_angle, arm_horizontal_angle))
+        base_angle, arm_vertical_angle, arm_horizontal_angle = angles[action]
+        eezybot.base.rotate(base_angle)
+        eezybot.verticalArm.rotate(arm_vertical_angle)
+        eezybot.horizontalArm.rotate(arm_horizontal_angle)
+        eezybot.start().finish_and_shutdown()
 
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
@@ -112,7 +122,9 @@ class EezybotEnv(gym.Env):
         """
 
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
+        self._take_action(action)
         old_state = self.state
+        eezybot.wait_for_all()
         self.state = self._getCurrentState()
         reward = self._resolve_reward(old_state, self.state)
         self.episode_over = self._is_episode_over(self.state)
@@ -124,7 +136,7 @@ class EezybotEnv(gym.Env):
              observation (object): the initial observation.
          """
         # Initial state
-        eezybot.start.to_default_and_shutdown()
+        eezybot.start().to_default_and_shutdown()
         return self._getCurrentState()
 
     def render(self, mode='human', close=False):
@@ -158,7 +170,7 @@ class EezybotEnv(gym.Env):
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        eezybot.start.to_default_and_shutdown(interrupt=True)
+        eezybot.start().to_default_and_shutdown(interrupt=True)
 
     def seed(self, seed=None):
         """Sets the seed for this env's random number generator(s).
