@@ -1,5 +1,8 @@
 from ai.ai import EezybotDQN
+from eezybot_servo_controller import eezybot
 
 
-def move_to(target_type, fixed_target=None):
-    EezybotDQN(target_type, fixed_target)
+def go_to_marble():
+    EezybotDQN(eezybot.base)
+    EezybotDQN(eezybot.verticalArm)
+    EezybotDQN(eezybot.horizontalArm)

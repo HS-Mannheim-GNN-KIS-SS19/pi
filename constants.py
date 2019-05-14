@@ -1,4 +1,4 @@
-USE_FAKE_CONTROLLER = False
+USE_FAKE_CONTROLLER = True
 
 
 class STEP_CONTROL:
@@ -33,7 +33,7 @@ class CLUTCH:
     DEFAULT = 60
     MAX = 180
     GRAB = 35
-    RELEASE = 70
+    RELEASE = DEFAULT
 
 
 class MANUEL_CONTROL:
@@ -45,5 +45,7 @@ class IMAGE_PROCESSING:
 
 
 class ENV:
+    STEP_SIZE = 1
+    SERVO_SPACE = STEP_SIZE * 2 + 1
+    ACTION_SPACE = (STEP_SIZE * 2 + 1) ** 3
     ERROR_TOLERANCE = 1
-    STEP_SIZE = 10

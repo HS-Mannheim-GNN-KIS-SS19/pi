@@ -4,41 +4,45 @@ import cv2
 import gym
 from gym import spaces
 import numpy as np
-from image_processing_interface import get_arm, get_marbles, get_destination
+
 from eezybot_servo_controller import eezybot
+from image_processing_interface import *
 import raspi_camera
 from constants import ENV
-
-
-class Target(Enum):
-    MARBLE = 0
-    DESTINATION = 1
-    FIXED_TARGET = 2
 
 
 def _take_picture():
     return raspi_camera.take_picture()
 
 
-def _resolve_distance(pos1, pos2):
-    return np.sqrt((pos1[0] - pos2[0]) ** 2 + (pos2[1] - pos2[1]) ** 2)
+def _get_current_state():
+    return get_state()
 
 
-def _get_angle_list():
+# TODO
+def _distance_reward(old_state, new_state):
+    return float(0)
+
+
+# TODO
+def _radius_reward(old_r, new_r):
+    return new_r - old_r
+
+
+def _map_action_to_angles():
     angles = []
-    for base_angle in range(ENV.STEP_SIZE):
-        for arm_vertical_angle in range(ENV.STEP_SIZE):
-            for arm_horizontal_angle in range(ENV.STEP_SIZE):
-                angles.append((base_angle, arm_vertical_angle, arm_horizontal_angle))
+    for base_angle in range(ENV.SERVO_SPACE):
+        for arm_vertical_angle in range(ENV.SERVO_SPACE):
+            for arm_horizontal_angle in range(ENV.SERVO_SPACE):
+                angles.append((base_angle - ENV.STEP_SIZE, arm_vertical_angle - ENV.STEP_SIZE,
+                               arm_horizontal_angle - ENV.STEP_SIZE))
     return angles
 
 
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, kwargs):
-        self.target_type = kwargs["target"]
-        self.fixed_target = kwargs["is_fixed"]
+    def __init__(self):
         """The main OpenAI Gym class. It encapsulates an environment with
          arbitrary behind-the-scenes dynamics. An environment can be
          partially or fully observed.
@@ -60,54 +64,38 @@ class EezybotEnv(gym.Env):
          non-underscored versions are wrapper methods to which we may add
          functionality over time.
          """
+        # Coordinate min/maxs
+        # TODO: set to smallest/biggest distance from eezybot to marble
+        self.min_distance_to_eezybot = 0
+        self.max_distance_to_eezybot = float('inf')
 
-        self.action_space = spaces.Discrete(ENV.STEP_SIZE ** 3)
+        self.action_space = spaces.Discrete(ENV.ACTION_SPACE)
         # A R^n space which describes all valid inputs our model knows
-        self.observation_space = spaces.Box(self.min_distance_to_eezybot, self.max_distance_to_eezybot, shape=(4,),
+        self.observation_space = spaces.Box(self.min_distance_to_eezybot, self.max_distance_to_eezybot, shape=(3,),
                                             dtype=np.float32)
 
         self.reward_range = (-float('inf'), float('inf'))
 
         self.episode_over = False
 
-        # Coordinate min/maxs
-        # TODO: set to smallest/biggest distance from eezybot to marble
-        self.min_distance_to_eezybot = 0
-        self.max_distance_to_eezybot = int('inf')
-        self.angles = _get_angle_list()
+        self.angles = _map_action_to_angles()
         self.image = None
         self.state = None
         self.reset()
-
-    def _resolve_target(self, image):
-        if self.target_type is Target.FIXED_TARGET:
-            return self.fixed_target
-        elif self.target_type is Target.MARBLE:
-            return get_marbles(image)[0]
-        else:
-            return get_destination(image)
-
-    def _getCurrentState(self):
-        self.image = _take_picture()
-        target_pos = self._resolve_target(self.image)
-        arm_pos = get_arm(self.image)
-        return target_pos.x, target_pos.y, arm_pos.x, arm_pos.y
 
     """
     ----------- Api methods below here -----------
     """
 
+    # TODO
     def _resolve_reward(self, old_state, new_state):
-        old_dest_pos = old_state[0:2]
-        old_arm_pos = old_state[2:4]
-        new_dest_pos = new_state[0:1]
-        new_arm_pos = new_state[2:4]
-        return _resolve_distance(old_dest_pos, old_arm_pos) - _resolve_distance(new_dest_pos, new_arm_pos)
+        d_reward = _distance_reward(old_state[0:2], new_state[0:2])
+        r_reward = _radius_reward(old_state[3], old_state[3])
+        return float(0)
 
+    # TODO
     def _is_episode_over(self, new_state):
-        new_dest_pos = new_state[0:2]
-        new_arm_pos = new_state[2:4]
-        return ENV.ERROR_TOLERANCE > _resolve_distance(new_dest_pos, new_arm_pos) > -ENV.ERROR_TOLERANCE
+        return False
 
     def _take_action(self, action):
         base_angle, arm_vertical_angle, arm_horizontal_angle = self.angles[action]
@@ -134,7 +122,7 @@ class EezybotEnv(gym.Env):
         self._take_action(action)
         old_state = self.state
         eezybot.wait_for_all()
-        self.state = self._getCurrentState()
+        self.state = _get_current_state()
         reward = self._resolve_reward(old_state, self.state)
         self.episode_over = self._is_episode_over(self.state)
         return self.state, reward, self.episode_over, {}
@@ -146,7 +134,7 @@ class EezybotEnv(gym.Env):
          """
         # Initial state
         eezybot.start().to_default_and_shutdown()
-        return self._getCurrentState()
+        return _get_current_state()
 
     def render(self, mode='human', close=False):
         """Renders the environment.

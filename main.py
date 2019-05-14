@@ -1,10 +1,9 @@
 
 from eezybot_servo_controller import eezybot
-from gym_.gym_eezybot.envs.eezybot_env import Target
 import ai_inerface
 
 while True:
-    ai_inerface.move_to(Target.MARBLE)
+    ai_inerface.go_to_marble()
     eezybot.clutch.grab()
-    ai_inerface.move_to(Target.DESTINATION)
+    ai_inerface.go_to_destination()
     eezybot.clutch.release()

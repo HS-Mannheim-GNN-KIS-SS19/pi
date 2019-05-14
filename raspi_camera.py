@@ -1,5 +1,5 @@
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+# from picamera.array import PiRGBArray
+# from picamera import PiCamera
 import time
 
 camera = None
@@ -22,5 +22,5 @@ def take_picture():
 
     if image is None:
         raise AssertionError("no image")
-
+    image = None
     return image

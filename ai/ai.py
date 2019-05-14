@@ -11,16 +11,16 @@ from rl.memory import SequentialMemory
 
 
 class EezybotDQN:
-    def __init__(self, target_type, fixed_target=None):
+    def __init__(self, servo):
         # Get the environment and extract the number of actions.
         ENV_NAME = 'EezybotEnv-v0'
-        env = gym.make(ENV_NAME, target=target_type, is_fixed=fixed_target)
+        env = gym.make(ENV_NAME, servo=servo)
 
         np.random.seed(123)
         nb_actions = env.action_space.n
 
         # Next, we build a very simple model.
-        HIDDEN_LAYER_SIZE = int(env.observation_space.shape * (1.0 / 3.0))
+        HIDDEN_LAYER_SIZE = int(env.observation_space.shape[0] / 3)
         model = Sequential()
         model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
         model.add(Dense(HIDDEN_LAYER_SIZE))
