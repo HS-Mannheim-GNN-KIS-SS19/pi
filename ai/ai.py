@@ -11,10 +11,10 @@ from rl.memory import SequentialMemory
 
 
 class EezybotDQN:
-    def __init__(self, servo):
+    def __init__(self):
         # Get the environment and extract the number of actions.
         ENV_NAME = 'EezybotEnv-v0'
-        env = gym.make(ENV_NAME, servo=servo)
+        env = gym.make(ENV_NAME)
 
         np.random.seed(123)
         nb_actions = env.action_space.n
