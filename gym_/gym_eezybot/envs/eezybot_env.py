@@ -24,6 +24,15 @@ def _resolve_distance(pos1, pos2):
     return np.sqrt((pos1.x - pos2.x) ** 2 + (pos1.x - pos2.y) ** 2)
 
 
+def _get_angle_list():
+    angles = []
+    for base_angle in range(ENV.STEP_SIZE):
+        for arm_vertical_angle in range(ENV.STEP_SIZE):
+            for arm_horizontal_angle in range(ENV.STEP_SIZE):
+                angles.append((base_angle, arm_vertical_angle, arm_horizontal_angle))
+    return angles
+
+
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -65,7 +74,7 @@ class EezybotEnv(gym.Env):
         # TODO: set to smallest/biggest distance from eezybot to marble
         self.min_distance_to_eezybot = 0
         self.max_distance_to_eezybot = int('inf')
-
+        self.angles = _get_angle_list()
         self.image = None
         self.state = None
         self.reset()
@@ -96,12 +105,7 @@ class EezybotEnv(gym.Env):
         return ENV.ERROR_TOLERANCE > _resolve_distance(new_dest_pos, new_arm_pos) > -ENV.ERROR_TOLERANCE
 
     def _take_action(self, action):
-        angles = []
-        for base_angle in range(ENV.STEP_SIZE):
-            for arm_vertical_angle in range(ENV.STEP_SIZE):
-                for arm_horizontal_angle in range(ENV.STEP_SIZE):
-                    angles.append((base_angle, arm_vertical_angle, arm_horizontal_angle))
-        base_angle, arm_vertical_angle, arm_horizontal_angle = angles[action]
+        base_angle, arm_vertical_angle, arm_horizontal_angle = self.angles[action]
         eezybot.base.rotate(base_angle)
         eezybot.verticalArm.rotate(arm_vertical_angle)
         eezybot.horizontalArm.rotate(arm_horizontal_angle)
