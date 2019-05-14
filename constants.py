@@ -42,3 +42,6 @@ class MANUEL_CONTROL:
 
 class IMAGE_PROCESSING:
     use_python_2 = False
+
+class ENV:
+    ERROR_TOLERANCE = 1

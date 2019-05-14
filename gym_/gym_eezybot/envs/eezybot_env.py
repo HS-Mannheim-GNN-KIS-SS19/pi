@@ -7,6 +7,7 @@ import numpy as np
 from image_processing_interface import get_arm, get_marbles, get_destination
 from eezybot_servo_controller import eezybot
 import raspi_camera
+from constants import ENV
 
 
 class Target(Enum):
@@ -84,7 +85,18 @@ class EezybotEnv(gym.Env):
     ----------- Api methods below here -----------
     """
 
-    # TODO
+    def _resolve_distance(self, pos1, pos2):
+        return np.sqrt((pos1.x - pos2.x) ** 2 + (pos1.x - pos2.y) ** 2)
+
+    def _resolve_reward(self, old_state, new_state):
+        old_dest_pos, old_arm_pos = old_state
+        new_dest_pos, new_arm_pos = new_state
+        return self._resolve_distance(old_dest_pos, old_arm_pos) - self._resolve_distance(new_dest_pos, new_arm_pos)
+
+    def _is_episode_over(self, new_state):
+        new_dest_pos, new_arm_pos = new_state
+        return ENV.ERROR_TOLERANCE > self._resolve_distance(new_dest_pos, new_arm_pos) > -ENV.ERROR_TOLERANCE
+
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -100,11 +112,10 @@ class EezybotEnv(gym.Env):
         """
 
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
-        oldMarblePos, oldArmPos = self.state
+        old_state = self.state
         self.state = self._getCurrentState()
-        marblePos, armPos = self.state
-        reward = None
-
+        reward = self._resolve_reward(old_state, self.state)
+        self.episode_over = self._is_episode_over(self.state)
         return self.state, reward, self.episode_over, {}
 
     def reset(self):
