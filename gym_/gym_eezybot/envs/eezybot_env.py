@@ -91,7 +91,7 @@ class EezybotEnv(gym.Env):
     def _resolve_reward(self, old_state, new_state):
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
         r_reward = _radius_reward(old_state[3], old_state[3])
-        return float(0)
+        return d_reward * r_reward
 
     # TODO
     def _is_episode_over(self, new_state):
