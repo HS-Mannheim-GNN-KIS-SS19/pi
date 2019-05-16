@@ -1,14 +1,12 @@
-from enum import Enum
-
 import cv2
 import gym
-from gym import spaces
 import numpy as np
+from gym import spaces
 
-from eezybot_servo_controller import eezybot
-from image_processing_interface import *
 import raspi_camera
 from constants import ENV
+from eezybot_servo_controller import eezybot
+from image_processing_interface import *
 
 
 def _take_picture():
@@ -19,12 +17,14 @@ def _get_current_state():
     return get_state()
 
 
-# TODO
+def vectorLength(vector):
+    return np.math.sqrt(sum(i ** 2 for i in vector))
+
+
 def _distance_reward(old_state, new_state):
-    return float(0)
+    return vectorLength(new_state) - vectorLength(old_state)
 
 
-# TODO
 def _radius_reward(old_r, new_r):
     return new_r - old_r
 
@@ -91,7 +91,7 @@ class EezybotEnv(gym.Env):
     def _resolve_reward(self, old_state, new_state):
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
         r_reward = _radius_reward(old_state[3], old_state[3])
-        return float(0)
+        return d_reward * r_reward
 
     # TODO
     def _is_episode_over(self, new_state):

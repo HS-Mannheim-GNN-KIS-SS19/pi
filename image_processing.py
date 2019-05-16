@@ -1,42 +1,13 @@
 import subprocess
+import sys
+
 import cv2
 import imutils
+import numpy as np
 from imutils import contours
-from constants import IMAGE_PROCESSING
-from position import Position
 
-
-def nothing(x):
-    pass
-
-
-# TODO implement me plzz
-def _get_reference_point_positions(image):
-    return []
-
-
-# TODO implement me plzz
-def _get_absolute_eezybot_position(image):
-    return []
-
-
-# TODO implement me plzz
-def _get_stretch_factor(image):
-    stretch = 1.0
-    reference_points = _get_reference_point_positions(image)
-    return []
-
-
-# TODO implement me plzz
-def _resolve_marble_pos_relative_to_eezybot(marble_pos_relative_to_field, eezybot_pos_relative_to_field):
-    return []
-
-
-# TODO implement me plzz
-def _calculate_distance_to_arm(image) -> (float, float):
-    import random as r
-    horizontal, vertical = r.random() * 100, r.random() * 100
-    return horizontal, vertical
+EXECUTE_IN_PYTHON2 = False
+USE_IMAGE_NOT_CAMERA = True
 
 
 def _find_marbles(image, color_lower, color_upper):
@@ -70,43 +41,31 @@ def _find_marbles(image, color_lower, color_upper):
     return detected_marbles
 
 
-def _detect_with_python2(color_lower, color_upper):
-    python = 'python2'
-    completed_process = subprocess.run(
-        [python, 'image_processing.py', '"' + str(color_lower) + '"', '"' + str(color_upper) + '"'])
-    # parse list string to list object
-    print(completed_process.stdout)
-    return eval(completed_process.stdout)
-
-
-def _get_absolute_marble_positions(image):
-    if IMAGE_PROCESSING.use_python_2:
-        coords = _detect_with_python2()
+def _main(color_lower, color_upper):
+    if USE_IMAGE_NOT_CAMERA:
+        image = cv2.imread('images/pitest.jpg')
     else:
-        image = cv2.imread('../images/pitest.jpg')
-        if image is None:
-            image = cv2.imread("images/pitest.jpg")
+        import raspi_camera
 
-    import numpy as np
-    lower_blue = np.array([100, 0, 0])
-    upper_blue = np.array([255, 255, 255])
-    coords = _find_marbles(image, lower_blue, upper_blue)
+        image = raspi_camera.picture()
 
-    return coords
+    return {
+        "shape": image.shape,
+        "marbles": _find_marbles(image, np.array(color_lower), np.array(color_upper))
+    }
 
 
-"""Program Interface"""
+def detect(color_lower, color_upper):
+    if EXECUTE_IN_PYTHON2:
+        python = 'python2'
+        cmdLine = [python, 'image_processing.py', '"' + str(color_lower) + '"', '"' + str(color_upper) + '"']
+        completed_process = subprocess.run(cmdLine)
+        # parse list string to list object
+        print(completed_process.stdout)
+        return eval(completed_process.stdout)
+    return _main(color_lower, color_upper)
 
 
-def get_marble_position_relative_to_eezybot(image):
-    stretch = _get_stretch_factor(image)
-    eezybot_pos_relative_to_field = list(
-        map(lambda pos: [x * y for x, y in zip(pos, stretch)], _get_absolute_eezybot_position(image)))
-    marble_pos_relative_to_field = list(
-        map(lambda pos: [stretch * coord for coord in pos], _get_absolute_marble_positions(image)))
-    return _resolve_marble_pos_relative_to_eezybot(eezybot_pos_relative_to_field, marble_pos_relative_to_field)
-
-
-# TODO implement me plzz
-def get_arm_position_relative_to_eezybot(image):
-    return Position(0, 0)
+# called when executed directly
+if __name__ == '__main__':
+    print(_main(eval(sys.argv[1]), eval(sys.argv[2])))
