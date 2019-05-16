@@ -1,6 +1,8 @@
 USE_FAKE_CONTROLLER = True
 
 
+# TODO min, max werte auf -1 bis 1 umstellen oder so
+
 class STEP_CONTROL:
     SIZE = 1
     TIME = 0.02
