@@ -5,6 +5,7 @@ from gym import spaces
 
 import raspi_camera
 from constants import ENV
+from image_processing_interface import *
 from eezybot_servo_controller import eezybot
 from image_processing_interface import *
 
@@ -13,7 +14,7 @@ def _take_picture():
     return raspi_camera.take_picture()
 
 
-def _get_current_state():
+def _get_current_state() -> (float, float, float):
     return get_state()
 
 
@@ -25,6 +26,7 @@ def _distance_reward(old_state, new_state):
     return vectorLength(new_state) - vectorLength(old_state)
 
 
+# TODO
 def _radius_reward(old_r, new_r):
     return new_r - old_r
 
@@ -83,15 +85,11 @@ class EezybotEnv(gym.Env):
         self.state = None
         self.reset()
 
-    """
-    ----------- Api methods below here -----------
-    """
-
     # TODO
     def _resolve_reward(self, old_state, new_state):
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
         r_reward = _radius_reward(old_state[3], old_state[3])
-        return d_reward * r_reward
+        return float(0)
 
     # TODO
     def _is_episode_over(self, new_state):
