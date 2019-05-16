@@ -26,7 +26,6 @@ def _distance_reward(old_state, new_state):
     return vectorLength(new_state) - vectorLength(old_state)
 
 
-# TODO
 def _radius_reward(old_r, new_r):
     return new_r - old_r
 
@@ -66,14 +65,18 @@ class EezybotEnv(gym.Env):
          non-underscored versions are wrapper methods to which we may add
          functionality over time.
          """
+        # image can only be None if we pipe through stdout
+        self.image = None
+
+
         # Coordinate min/maxs
         # TODO: set to smallest/biggest distance from eezybot to marble
         self.min_distance_to_eezybot = 0
         self.max_distance_to_eezybot = float('inf')
-
+        # Should be 27 actions: 3 servos ^ 3 actions
         self.action_space = spaces.Discrete(ENV.ACTION_SPACE)
-        # A R^n space which describes all valid inputs our model knows
-        self.observation_space = spaces.Box(self.min_distance_to_eezybot, self.max_distance_to_eezybot, shape=(3,),
+        # A R^n space which describes all valid inputs our model knows (x, y, radius)
+        self.observation_space = spaces.Box(-1.0, 1.0, shape=(3,),
                                             dtype=np.float32)
 
         self.reward_range = (-float('inf'), float('inf'))
@@ -81,8 +84,7 @@ class EezybotEnv(gym.Env):
         self.episode_over = False
 
         self.angles = _map_action_to_angles()
-        self.image = None
-        self.state = None
+        self.state = _get_current_state()
         self.reset()
 
     # TODO

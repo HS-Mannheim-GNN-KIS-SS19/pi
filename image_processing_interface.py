@@ -1,7 +1,6 @@
 from image_processing import detect
 
 
-# returns Position of the marble as Position Object
 def get_state():
     map = detect((100, 0, 0), (255, 255, 255))
     marbles = map["marbles"]
