@@ -30,14 +30,14 @@ def _radius_reward(old_r, new_r):
     return new_r - old_r
 
 
-def _map_action_to_angles():
-    angles = []
+def _map_action_to_action_tuple():
+    actions = []
     for base_angle in range(ENV.SERVO_SPACE):
         for arm_vertical_angle in range(ENV.SERVO_SPACE):
             for arm_horizontal_angle in range(ENV.SERVO_SPACE):
-                angles.append((base_angle - ENV.STEP_SIZE, arm_vertical_angle - ENV.STEP_SIZE,
+                actions.append((base_angle - ENV.STEP_SIZE, arm_vertical_angle - ENV.STEP_SIZE,
                                arm_horizontal_angle - ENV.STEP_SIZE))
-    return angles
+    return actions
 
 
 class EezybotEnv(gym.Env):
@@ -68,7 +68,6 @@ class EezybotEnv(gym.Env):
         # image can only be None if we pipe through stdout
         self.image = None
 
-
         # Coordinate min/maxs
         # TODO: set to smallest/biggest distance from eezybot to marble
         self.min_distance_to_eezybot = 0
@@ -83,14 +82,14 @@ class EezybotEnv(gym.Env):
 
         self.episode_over = False
 
-        self.angles = _map_action_to_angles()
+        self.actions_tuple = _map_action_to_action_tuple()
         self.state = _get_current_state()
         self.reset()
 
-    # TODO
+
     def _resolve_reward(self, old_state, new_state):
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
-        r_reward = _radius_reward(old_state[3], old_state[3])
+        r_reward = _radius_reward(old_state[2], old_state[2])
         return d_reward * r_reward
 
     # TODO
@@ -98,10 +97,10 @@ class EezybotEnv(gym.Env):
         return False
 
     def _take_action(self, action):
-        base_angle, arm_vertical_angle, arm_horizontal_angle = self.angles[action]
-        eezybot.base.rotate(base_angle)
-        eezybot.verticalArm.rotate(arm_vertical_angle)
-        eezybot.horizontalArm.rotate(arm_horizontal_angle)
+        base_angle, arm_vertical_angle, arm_horizontal_angle = self.actions_tuple[action]
+        eezybot.base.step(base_angle)
+        eezybot.verticalArm.step(arm_vertical_angle)
+        eezybot.horizontalArm.step(arm_horizontal_angle)
         eezybot.start().finish_and_shutdown()
 
     def step(self, action):

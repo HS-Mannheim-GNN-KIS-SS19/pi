@@ -81,13 +81,21 @@ class _Servo:
                 self.__queue.put(angle)
         return self
 
-    # resolves degree from relative value
-    def _resolveDegree(self, value):
+    # one step in negative, positive direction (-1, 1) or don't move (0)
+    # TODO stepsize mit einberechnen
+    def step(self, direction):
+        if direction == 0:
+            return
+        cur_angle = self._ensure_in_bounds(_kit.servo[self.__channel_number].angle)
+        self.rotate(cur_angle + cur_angle * direction)
+
+    # resolves degree from relative value (0.0-1.0)
+    def _resolve_degree(self, value):
         return self.__min_degrees + int(value * (self.__max_degrees - self.__min_degrees))
 
     # resolves absolute angle from given relative value then calls rotate with resolved angle
     def rotate_relative(self, value):
-        self.rotate(self._resolveDegree(value))
+        self.rotate(self._resolve_degree(value))
         return self
 
     # runs permanently checking for new rotation requests. Runs in new Thread after calling start() Function
@@ -121,10 +129,10 @@ class _Servo:
     # performs actual rotation to a given angle
     def __run_rotation(self, angle):
         cur_angle = self._ensure_in_bounds(_kit.servo[self.__channel_number].angle)
-        # calculate delta betwe      en current angle and destined angle
+        # calculate delta between current angle and destined angle
         delta = angle - cur_angle
 
-        # divide delta in steps witch will be added on the current angle until the destined angle is reached
+        # divide delta in steps which will be added on the current angle until the destined angle is reached
         # Each time, moving and waiting are performed in an additional Thread.
         # It calculates the next angle in the meantime and then waits for the movement and waiting to be finished
         for _ in range(int(abs(delta) / cons.STEP_CONTROL.SIZE)):
@@ -305,7 +313,8 @@ class _Eezybot:
     # ensures the last rotation of everyAdded Servo is to the given parameters
     # if interrupt is True, it won't wait for all queued rotations to be performed and
     # instead cancels all currently performed rotations and clears the queues
-    def finish_and_shutdown(self, base_angle=None, vertical_angle=None, horizontal_angle=None, clutch_angle=None, interrupt=False):
+    def finish_and_shutdown(self, base_angle=None, vertical_angle=None, horizontal_angle=None, clutch_angle=None,
+                            interrupt=False):
         if not self.is_running:
             raise AssertionError("tried to shutdown not running Eezybot")
         else:

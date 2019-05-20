@@ -14,20 +14,21 @@ class EezybotDQN:
     def __init__(self):
         # Get the environment and extract the number of actions.
         ENV_NAME = 'EezybotEnv-v0'
+        print('building gym...')
         env = gym.make(ENV_NAME)
 
         np.random.seed(123)
         nb_actions = env.action_space.n
 
+        print('initializing DQN...')
         # Next, we build a very simple model.
-        HIDDEN_LAYER_SIZE = int(env.observation_space.shape[0] / 3)
         model = Sequential()
         model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-        model.add(Dense(HIDDEN_LAYER_SIZE))
+        model.add(Dense(16))
         model.add(Activation('relu'))
-        model.add(Dense(HIDDEN_LAYER_SIZE))
+        model.add(Dense(8))
         model.add(Activation('relu'))
-        model.add(Dense(HIDDEN_LAYER_SIZE))
+        model.add(Dense(8))
         model.add(Activation('relu'))
         model.add(Dense(nb_actions))
         model.add(Activation('linear'))
@@ -44,6 +45,7 @@ class EezybotDQN:
         # Okay, now it's time to learn something! We visualize the training here for show, but this
         # slows down training quite a lot. You can always safely abort the training prematurely using
         # Ctrl + C.
+        print('starting learning...')
         dqn.fit(env, nb_steps=1000, visualize=True, verbose=2)
 
         # After training is done, we save the final weights.
