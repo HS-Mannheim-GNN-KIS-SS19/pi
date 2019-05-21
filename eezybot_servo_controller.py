@@ -1,6 +1,8 @@
 import threading
 import time
 import sys
+from collections import Mapping
+
 import constants as cons
 
 if not cons.USE_FAKE_CONTROLLER:
@@ -81,21 +83,13 @@ class _Servo:
                 self.__queue.put(angle)
         return self
 
-    # one step in negative, positive direction (-1, 1) or don't move (0)
-    # TODO stepsize mit einberechnen
-    def step(self, direction):
-        if direction == 0:
-            return
-        cur_angle = self._ensure_in_bounds(_kit.servo[self.__channel_number].angle)
-        self.rotate(cur_angle + cur_angle * direction)
-
-    # resolves degree from relative value (0.0-1.0)
-    def _resolve_degree(self, value):
+    # resolves degree from relative value
+    def _resolveDegree(self, value):
         return self.__min_degrees + int(value * (self.__max_degrees - self.__min_degrees))
 
     # resolves absolute angle from given relative value then calls rotate with resolved angle
     def rotate_relative(self, value):
-        self.rotate(self._resolve_degree(value))
+        self.rotate(self._resolveDegree(value))
         return self
 
     # runs permanently checking for new rotation requests. Runs in new Thread after calling start() Function
@@ -116,6 +110,8 @@ class _Servo:
                 self.__queue.task_done()
             except Empty:
                 pass
+        self.__block_rotate_method = False
+        self.__shutdown_rotation_controller = False
 
     # Ensures the Servos current rotation is in Bounds (min: 0, max: 180).
     def _ensure_in_bounds(self, angle):
@@ -129,10 +125,10 @@ class _Servo:
     # performs actual rotation to a given angle
     def __run_rotation(self, angle):
         cur_angle = self._ensure_in_bounds(_kit.servo[self.__channel_number].angle)
-        # calculate delta between current angle and destined angle
+        # calculate delta betwe      en current angle and destined angle
         delta = angle - cur_angle
 
-        # divide delta in steps which will be added on the current angle until the destined angle is reached
+        # divide delta in steps witch will be added on the current angle until the destined angle is reached
         # Each time, moving and waiting are performed in an additional Thread.
         # It calculates the next angle in the meantime and then waits for the movement and waiting to be finished
         for _ in range(int(abs(delta) / cons.STEP_CONTROL.SIZE)):
@@ -190,9 +186,6 @@ class _Servo:
             self.wait()
             self.__shutdown_rotation_controller = True
             self.__rotation_controller_thread.join()
-            self.__shutdown_rotation_controller = False
-            self.__block_rotate_method = False
-        return self
 
     def get_rotation(self):
         return _kit.servo[self.__channel_number].angle
@@ -203,6 +196,17 @@ class _Servo:
     def to_default(self):
         self.rotate(self.__default_degree)
         return self
+
+    def join(self):
+        if self.__rotation_controller_thread is not None:
+            self.__rotation_controller_thread.join()
+        return self
+
+    def is_running(self):
+        if self.__rotation_controller_thread is not None:
+            return self.__rotation_controller_thread.is_alive()
+        else:
+            return False
 
 
 class _Base(_Servo):
@@ -276,7 +280,6 @@ class _Eezybot:
         self.horizontalArm = _ArmHorizontal()
         self.clutch = _Clutch()
         # Flags
-        self.is_running = False
         self.__key_listener_activated = False
 
     # interrupts and clears all queued rotations
@@ -315,27 +318,37 @@ class _Eezybot:
     # instead cancels all currently performed rotations and clears the queues
     def finish_and_shutdown(self, base_angle=None, vertical_angle=None, horizontal_angle=None, clutch_angle=None,
                             interrupt=False):
-        if not self.is_running:
-            raise AssertionError("tried to shutdown not running Eezybot")
-        else:
-            self.is_running = False
-            self.base.shutdown(base_angle, interrupt=interrupt)
-            self.verticalArm.shutdown(vertical_angle, interrupt=interrupt)
-            self.horizontalArm.shutdown(horizontal_angle, interrupt=interrupt)
-            self.clutch.shutdown(clutch_angle, interrupt=interrupt)
-
+        threading.Thread(target=self.base.shutdown, args=(base_angle,), kwargs={"interrupt": interrupt},
+                         daemon=True).start()
+        threading.Thread(target=self.verticalArm.shutdown, args=(vertical_angle,),
+                         kwargs={"interrupt": interrupt}, daemon=True).start()
+        threading.Thread(target=self.horizontalArm.shutdown, args=(horizontal_angle,),
+                         kwargs={"interrupt": interrupt},
+                         daemon=True).start()
+        threading.Thread(target=self.clutch.shutdown, args=(clutch_angle,), kwargs={"interrupt": interrupt},
+                         daemon=True).start()
         return self
+
+    def wait_for_shutdown(self, timeout=0):
+        self.base.join()
+        self.verticalArm.join()
+        self.horizontalArm.join()
+        self.clutch.join()
+        return self
+
+    def is_running(self):
+        return self.base.is_running() and self.verticalArm.is_running() and self.horizontalArm.is_running() and self.clutch.is_running()
 
     # starts the Thread of every queue witch is performing queued rotations
     def start(self):
-        if self.is_running:
-            raise AssertionError("tried to start still running Eezybot")
-        else:
+        if not self.base.is_running():
             self.base.start()
+        if not self.verticalArm.is_running():
             self.verticalArm.start()
+        if not self.horizontalArm.is_running():
             self.horizontalArm.start()
+        if not self.clutch.is_running():
             self.clutch.start()
-            self.is_running = True
         return self
 
     def print_performed_rotations(self, bool):
@@ -350,8 +363,6 @@ class _Eezybot:
     def activate_key_listener(self):
         if self.__key_listener_activated:
             raise AssertionError("Key Listeners are already activated")
-        elif not self.is_running:
-            raise AssertionError("Eezybot has not been started yet, can't activate Key Listener")
         else:
             threading.Thread(target=self.__key_listener, daemon=True).start()
         return self
@@ -367,7 +378,7 @@ class _Eezybot:
             return angle
 
         step_size = cons.MANUEL_CONTROL.STEP
-        while self.is_running:
+        while self.is_running():
             key = sys.stdin.read(1)
 
             if str(key) == chr(27):

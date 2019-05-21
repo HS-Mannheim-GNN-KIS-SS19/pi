@@ -36,7 +36,7 @@ def _map_action_to_action_tuple():
         for arm_vertical_angle in range(ENV.SERVO_SPACE):
             for arm_horizontal_angle in range(ENV.SERVO_SPACE):
                 actions.append((base_angle - ENV.STEP_SIZE, arm_vertical_angle - ENV.STEP_SIZE,
-                               arm_horizontal_angle - ENV.STEP_SIZE))
+                                arm_horizontal_angle - ENV.STEP_SIZE))
     return actions
 
 
@@ -86,7 +86,6 @@ class EezybotEnv(gym.Env):
         self.state = _get_current_state()
         self.reset()
 
-
     def _resolve_reward(self, old_state, new_state):
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
         r_reward = _radius_reward(old_state[2], old_state[2])
@@ -120,7 +119,7 @@ class EezybotEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
         self._take_action(action)
         old_state = self.state
-        eezybot.wait_for_all()
+        eezybot.wait_for_shutdown()
         self.state = _get_current_state()
         reward = self._resolve_reward(old_state, self.state)
         self.episode_over = self._is_episode_over(self.state)
@@ -132,7 +131,7 @@ class EezybotEnv(gym.Env):
              observation (object): the initial observation.
          """
         # Initial state
-        eezybot.start().to_default_and_shutdown()
+        eezybot.start().to_default_and_shutdown().wait_for_shutdown()
         return _get_current_state()
 
     def render(self, mode='human', close=False):
@@ -166,7 +165,7 @@ class EezybotEnv(gym.Env):
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        eezybot.start().to_default_and_shutdown(interrupt=True)
+        eezybot.start().to_default_and_shutdown(interrupt=True).wait_for_shutdown()
 
     def seed(self, seed=None):
         """Sets the seed for this env's random number generator(s).
