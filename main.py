@@ -1,4 +1,4 @@
-from eezybot_servo_controller import eezybot
+from eezybot_controller import eezybot
 import ai_interface
 import gym
 from gym.envs.registration import register

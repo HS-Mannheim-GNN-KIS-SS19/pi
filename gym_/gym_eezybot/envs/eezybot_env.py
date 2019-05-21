@@ -6,7 +6,7 @@ from gym import spaces
 import raspi_camera
 from constants import ENV
 from image_processing_interface import *
-from eezybot_servo_controller import eezybot
+from eezybot_controller import eezybot
 from image_processing_interface import *
 
 
@@ -97,9 +97,9 @@ class EezybotEnv(gym.Env):
 
     def _take_action(self, action):
         base_angle, arm_vertical_angle, arm_horizontal_angle = self.actions_tuple[action]
-        eezybot.base.step(base_angle)
-        eezybot.verticalArm.step(arm_vertical_angle)
-        eezybot.horizontalArm.step(arm_horizontal_angle)
+        eezybot.base.rotate(base_angle)
+        eezybot.verticalArm.rotate(arm_vertical_angle)
+        eezybot.horizontalArm.rotate(arm_horizontal_angle)
         eezybot.start().finish_and_shutdown()
 
     def step(self, action):
