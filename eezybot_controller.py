@@ -46,27 +46,39 @@ class _EezybotServoController(ServoController):
         super().__init__(self.base, self.verticalArm, self.horizontalArm, self.clutch)
         self.__key_listener_activated = False
 
-    # ensures the last rotation of every Servo is to it's default angle.
-    # if interrupt is True, it won't wait for all queued rotations to be performed and
-    # instead cancels all currently performed rotations and clears the queues
     def to_default_and_shutdown(self, interrupt=False):
+        """
+        ensures the last rotation of every Servo is to it's default angle.
+        if interrupt is True, it won't wait for all queued rotations to be performed and
+        instead cancels all currently performed rotations and clears the queues
+        """
         return self.finish_and_shutdown(cons.BASE.DEFAULT, cons.VERTICAL.DEFAULT,
                                         cons.HORIZONTAL.DEFAULT,
                                         cons.CLUTCH.DEFAULT, interrupt=interrupt)
 
-    # Eezybot must be started to activate Key Listeners
-    # Key Listener is stopping when Eezybot shuts down
+    def finish_and_shutdown(self, base_angle=None, arm_vertical_angle=None, arm_horizontal_angle=None,
+                            clutch_angle=None, interrupt=False):
+        return super().finish_and_shutdown(base_angle, arm_vertical_angle, arm_horizontal_angle, clutch_angle,
+                                           interrupt=interrupt)
+
     def activate_key_listener(self):
+        """
+        Eezybot must be started to activate Key Listeners
+        Key Listener is stopping when Eezybot shuts down
+        """
         if self.__key_listener_activated:
-            raise AssertionError("Key Listeners are already activated")
+            raise Exception("Key Listeners are already activated")
         else:
             self.__key_listener_activated = True
             threading.Thread(target=self.__key_listener, daemon=True).start()
         return self
 
-    # Eezybot must be started to activate Key Listeners
-    # Stops when Eezybot shuts down
     def __key_listener(self):
+        """
+        Eezybot must be started to activate Key Listeners -> all Servos must be started
+        Stops when Eezybot shuts down -> one Servo is not running/ is shut down
+        """
+
         def bounds_check(angle, min, max):
             if angle < min:
                 return min

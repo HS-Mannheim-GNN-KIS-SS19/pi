@@ -4,7 +4,7 @@ USE_FAKE_CONTROLLER = False
 # TODO min, max werte auf -1 bis 1 umstellen oder so
 # makes no sense since obviously 0 is min and 1 is max.
 # Another constant for default giving the relative value (between 0 and 1) would make sense.
-class STEP_CONTROL:
+class STEP:
     SIZE = 1
     TIME = 0.02
 

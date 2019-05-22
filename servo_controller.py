@@ -4,7 +4,7 @@ import threading
 import time
 import sys
 from typing import Tuple
-from constants import STEP_CONTROL, USE_FAKE_CONTROLLER
+from constants import STEP, USE_FAKE_CONTROLLER
 
 if not USE_FAKE_CONTROLLER:
     import adafruit_servokit
@@ -21,24 +21,53 @@ else:
         def ServoKit(channels=8):
             return adafruit_servokit
 
-# Set channels to the number of servo channels on your kit.
-# 8 for FeatherWing, 16 for Shield/HAT/Bonnet.
+"""
+Set channels to the number of servo channels on your kit.
+8 for FeatherWing, 16 for Shield/HAT/Bonnet.
+"""
 _kit = adafruit_servokit.ServoKit(channels=8)
+
+
+class AngleTooLittleException(Exception):
+    pass
+
+
+class AngleTooBigException(Exception):
+    pass
+
+
+class NotStartedException(Exception):
+    pass
+
+
+class ShutDownException(Exception):
+    pass
+
+
+def ensure_in_bounds(angle):
+    """
+    Ensures the Servos current rotation is in Bounds (min: 0, max: 180)
+    """
+    if angle < 0:
+        return 0
+    elif angle > 180:
+        return 180
+    else:
+        return angle
 
 
 class Servo:
 
     def __init__(self, channel_number, min_degree, default_degree, max_degree):
 
-        # IGNORE ERROR
-        # imports depending on Python version
+        # IGNORE ERROR: imports depending on Python version
         _IS_PI2 = sys.version_info < (3, 0)
         if _IS_PI2:
             from Queue import Queue
         else:
             from queue import Queue
 
-        # Bonds
+        # Bounds
         self.__min_degrees = min_degree
         self.__default_degree = default_degree
         self.__max_degrees = max_degree
@@ -48,15 +77,18 @@ class Servo:
         self.__rotation_controller_thread = None
         # https://docs.python.org/2/library/queue.html
         self.__queue = Queue()
+        self.__wait_for_other_servos_queue = Queue()
 
         # Flags
-        self.__wait_for_other_servos_queue = Queue()
         self.__print_rotations = False
         self.__clear_queue = False
         self.__block_rotate_method = False
         self.__shutdown_rotation_controller = False
 
-    # Creating Thread running the Rotation Control Function witch takes Rotations from queue and performs them
+    """
+    Creating Thread running the Rotation Control Function which takes Rotations from queue and performs them
+    """
+
     def start(self):
         if self.__rotation_controller_thread is not None and self.__rotation_controller_thread.is_alive():
             raise AssertionError("Servo {) is already started".format(self.__class__.__name__[1:]))
@@ -65,43 +97,55 @@ class Servo:
             self.__rotation_controller_thread.start()
         return self
 
-    # adds new Rotation to given angle to the queue.
-    # Movement will be performed through the rotation controller calling the __run_rotation(angle) function
-    # Raises AssertionError if self.__block_rotate_method Flag is True or given angle is out of bounds
     def rotate(self, angle):
+        """
+        adds the given angle to the queue of rotations to be performed by the rotation controller thread.
+
+        :raises ShutDownException: if shutdown is currently performed
+        :raises AngleTooLittleException
+        :raises AngleTooBigException
+        """
         if self.__block_rotate_method:
-            raise AssertionError("Can not perform rotation to {}: Servo Controller is shutting down".format(angle))
+            raise ShutDownException(
+                "Can not perform rotation to {}: Servo Controller is shutting down".format(angle))
+        elif angle < self.__min_degrees:
+            raise AngleTooLittleException(
+                "Rotation out of Bounds: cur: {} < min: {}".format(angle, self.__min_degrees))
+        elif angle > self.__max_degrees:
+            raise AngleTooBigException(
+                "Rotation out of Bounds: cur: {} > max: {}".format(angle, self.__max_degrees))
         else:
-            if angle < self.__min_degrees:
-                raise AssertionError("Rotation out of Bounds: cur: {} < min: {}".format(angle, self.__min_degrees))
-            elif angle > self.__max_degrees:
-                raise AssertionError("Rotation out of Bounds: cur: {} > max: {}".format(angle, self.__max_degrees))
-            else:
-                self.__queue.put(angle)
+            self.__queue.put(angle)
         return self
 
-    # resolves degree from relative value
-    def _resolveDegree(self, value):
+    def resolve_degree_from_relative(self, value):
+        """
+        resolves degree from relative value
+        """
         return self.__min_degrees + int(value * (self.__max_degrees - self.__min_degrees))
 
-    # resolves absolute angle from given relative value then calls rotate with resolved angle
     def rotate_relative(self, value):
-        self.rotate(self._resolveDegree(value))
+        """
+        resolves absolute angle from given relative value then calls rotate with resolved angle
+        """
+        self.rotate(self.resolve_degree_from_relative(value))
         return self
 
-    # runs permanently checking for new rotation requests. Runs in new Thread after calling start() Function
     def __rotation_control(self):
+        """
+        runs permanently checking for new rotation requests. Runs in new Thread after calling start() Function
+        """
         from queue import Empty
         while not self.__shutdown_rotation_controller:
             while not self.__wait_for_other_servos_queue.empty():
                 self.__wait_for_other_servos_queue.get().wait()
             if self.__clear_queue:
-                self.__clear_queue = False
                 while not self.__queue.empty():
                     self.__queue.get_nowait()
                     self.__queue.task_done()
+                self.__clear_queue = False
             try:
-                # block if queue is empty
+                # blocking if queue is empty
                 angle = self.__queue.get(timeout=0.1)
                 self.__run_rotation(angle)
                 self.__queue.task_done()
@@ -110,36 +154,25 @@ class Servo:
         self.__block_rotate_method = False
         self.__shutdown_rotation_controller = False
 
-    # Ensures the Servos current rotation is in Bounds (min: 0, max: 180).
-    @staticmethod
-    def _ensure_in_bounds(angle):
-        if angle < 0:
-            return 0
-        elif angle > 180:
-            return 180
-        else:
-            return angle
-
-    # performs actual rotation to a given angle
     def __run_rotation(self, angle):
-        cur_angle = self._ensure_in_bounds(_kit.servo[self.__channel_number].angle)
-        # calculate delta betwe      en current angle and destined angle
+        """
+         performs actual rotation to a given angle
+        """
+        cur_angle = ensure_in_bounds(_kit.servo[self.__channel_number].angle)
         delta = angle - cur_angle
 
-        # divide delta in steps witch will be added on the current angle until the destined angle is reached
-        # Each time, moving and waiting are performed in an additional Thread.
-        # It calculates the next angle in the meantime and then waits for the movement and waiting to be finished
-        for _ in range(int(abs(delta) / STEP_CONTROL.SIZE)):
+        # divide delta in steps which will be added on the current angle until the destined angle is reached
+        for _ in range(int(abs(delta) / STEP.SIZE)):
             if delta < 0:
-                cur_angle -= STEP_CONTROL.SIZE
+                cur_angle -= STEP.SIZE
             else:
-                cur_angle += STEP_CONTROL.SIZE
+                cur_angle += STEP.SIZE
             if self.__clear_queue:
                 return
             self.__step_to(cur_angle)
         if self.__clear_queue:
             return
-        if delta % STEP_CONTROL.SIZE != 0:
+        if delta % STEP.SIZE != 0:
             self.__step_to(cur_angle)
         if self.__print_rotations:
             print("servo {} performed movement to: {}".format(self.__class__.__name__[1:],
@@ -147,32 +180,42 @@ class Servo:
 
     def __step_to(self, angle):
         _kit.servo[self.__channel_number].angle = angle
-        time.sleep(STEP_CONTROL.TIME)
+        time.sleep(STEP.TIME)
 
-    # Calling Thread waits until the rotation queue of this Servo is empty
     def wait(self):
+        """
+        Calling Thread waits until the rotation queue of this Servo is empty
+        """
         self.__queue.join()
         return self
 
-    # make this Servo wait for another Servo emptying it's queue
     def wait_for_servo(self, *servos):
+        """
+        makes this Servo wait for another Servo emptying it's queue
+        :param servos: servos to be waited for
+        """
         for servo in servos:
             self.__wait_for_other_servos_queue.put(servo)
         return self
 
-    # stops and clears all rotations
     def clear_queue(self):
+        """
+        stops and clears all rotations
+        """
         self.__clear_queue = True
         return self
 
-    # sets flag to prevent new rotations to be added to queue
-    # then waits for the queue to be empty
-    # finally sets flag to shutdown the Rotation Control Thread
-    # if interrupt is true currently performed rotation as well as all queued rotations will be canceled.
-    # if an value is given to final_rotation the last rotation before shutting down will be of this angle
     def shutdown(self, final_rotation=None, interrupt=False):
+        """
+        sets flag to prevent new rotations to be added to queue
+        then waits for the queue to be empty
+        finally sets flag to shutdown the Rotation Control Thread
+
+        :param final_rotation: if an value is given to final_rotation the last rotation before shutting down will be of this angle
+        :param interrupt: if interrupt is True currently performed rotation as well as all queued rotations will be canceled.
+        """
         if self.__rotation_controller_thread is None or not self.__rotation_controller_thread.is_alive():
-            raise AssertionError(
+            raise NotStartedException(
                 "Servo {} wasn't running but tried to shut down".format(self.__class__.__name__[1:]))
         else:
             self.__block_rotate_method = True
@@ -213,14 +256,18 @@ class ServoController:
     def __init__(self, *servos):
         self.servos = servos  # type: Tuple[Servo]
 
-    # interrupts and clears all queued rotations
     def clear_all_queues(self):
+        """
+            interrupts and clears all queued rotations
+        """
         for servo in self.servos:
             servo.clear_queue()
         return self
 
-    # blocks until all queued movements are performed
     def wait_for_all(self):
+        """
+        blocks until all queued movements are performed
+        """
         for servo in self.servos:
             servo.wait()
         return self
@@ -252,14 +299,16 @@ class ServoController:
     def is_running(self):
         return all([servo.is_running() for servo in self.servos])
 
-    # starts the Thread of every queue witch is performing queued rotations
     def start(self):
+        """
+        starts the Thread of every servo which is performing queued rotations
+        """
         for servo in self.servos:
             if not servo.is_running():
                 servo.start()
         return self
 
-    def print_performed_rotations(self, bool):
+    def print_performed_rotations(self, bol):
         for servo in self.servos:
-            servo.print_performed_rotations(bool)
+            servo.print_performed_rotations(bol)
         return self
