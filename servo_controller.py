@@ -44,6 +44,10 @@ class ShutDownException(Exception):
     pass
 
 
+class AlreadyStartedException(Exception):
+    pass
+
+
 def ensure_in_bounds(angle):
     """
     Ensures the Servos current rotation is in Bounds (min: 0, max: 180)
@@ -61,8 +65,8 @@ class Servo:
     def __init__(self, channel_number, min_degree, default_degree, max_degree):
 
         # IGNORE ERROR: imports depending on Python version
-        _IS_PI2 = sys.version_info < (3, 0)
-        if _IS_PI2:
+        IS_PI2 = sys.version_info < (3, 0)
+        if IS_PI2:
             from Queue import Queue
         else:
             from queue import Queue
@@ -85,17 +89,47 @@ class Servo:
         self.__block_rotate_method = False
         self.__shutdown_rotation_controller = False
 
-    """
-    Creating Thread running the Rotation Control Function which takes Rotations from queue and performs them
-    """
+    """-----------------------------START & SHUT DOWN----------------------------------------------------"""
 
     def start(self):
+        """
+        Creating Thread running the Rotation Control Function which takes Rotations from queue and performs them
+
+        :raises AlreadyStartedException
+        """
         if self.__rotation_controller_thread is not None and self.__rotation_controller_thread.is_alive():
-            raise AssertionError("Servo {) is already started".format(self.__class__.__name__[1:]))
+            raise AlreadyStartedException("Servo {) is already started".format(self.__class__.__name__[1:]))
         else:
             self.__rotation_controller_thread = threading.Thread(target=self.__rotation_control, daemon=True)
             self.__rotation_controller_thread.start()
         return self
+
+    def shutdown(self, final_rotation=None, interrupt=False):
+        """
+        sets flag to prevent new rotations to be added to queue
+        then waits for the queue to be empty
+        finally sets flag to shutdown the Rotation Control Thread
+
+        :param final_rotation: if an value is given to final_rotation the last rotation before shutting down will be of this angle
+        :param interrupt: if interrupt is True currently performed rotation as well as all queued rotations will be canceled.
+
+        :raises NotStartedException
+        """
+        if self.__rotation_controller_thread is None or not self.__rotation_controller_thread.is_alive():
+            raise NotStartedException(
+                "Servo {} wasn't running but tried to shut down".format(self.__class__.__name__[1:]))
+        else:
+            self.__block_rotate_method = True
+            if interrupt:
+                self.clear_queue()
+            self.wait()
+            if final_rotation is not None:
+                self.__queue.put(final_rotation)
+            self.wait()
+            self.__shutdown_rotation_controller = True
+            self.__rotation_controller_thread.join()
+
+    """-----------------------------ADD ROTATION TO QUEUE----------------------------------------------------"""
 
     def rotate(self, angle):
         """
@@ -130,6 +164,35 @@ class Servo:
         """
         self.rotate(self.resolve_degree_from_relative(value))
         return self
+
+    def to_default(self):
+        self.rotate(self.__default_degree)
+        return self
+
+    """-----------------------------WAIT----------------------------------------------------"""
+
+    def join(self, timout=None):
+        if self.__rotation_controller_thread is not None:
+            self.__rotation_controller_thread.join(timout)
+        return self
+
+    def wait(self):
+        """
+        Calling Thread waits until the rotation queue of this Servo is empty
+        """
+        self.__queue.join()
+        return self
+
+    def wait_for_servo(self, *servos):
+        """
+        makes this Servo wait for another Servo emptying it's queue
+        :param servos: servos to be waited for
+        """
+        for servo in servos:
+            self.__wait_for_other_servos_queue.put(servo)
+        return self
+
+    """-----------------------------ROTATION EXECUTION----------------------------------------------------"""
 
     def __rotation_control(self):
         """
@@ -182,21 +245,7 @@ class Servo:
         _kit.servo[self.__channel_number].angle = angle
         time.sleep(STEP.TIME)
 
-    def wait(self):
-        """
-        Calling Thread waits until the rotation queue of this Servo is empty
-        """
-        self.__queue.join()
-        return self
-
-    def wait_for_servo(self, *servos):
-        """
-        makes this Servo wait for another Servo emptying it's queue
-        :param servos: servos to be waited for
-        """
-        for servo in servos:
-            self.__wait_for_other_servos_queue.put(servo)
-        return self
+    """-----------------------------MISC----------------------------------------------------"""
 
     def clear_queue(self):
         """
@@ -205,43 +254,11 @@ class Servo:
         self.__clear_queue = True
         return self
 
-    def shutdown(self, final_rotation=None, interrupt=False):
-        """
-        sets flag to prevent new rotations to be added to queue
-        then waits for the queue to be empty
-        finally sets flag to shutdown the Rotation Control Thread
-
-        :param final_rotation: if an value is given to final_rotation the last rotation before shutting down will be of this angle
-        :param interrupt: if interrupt is True currently performed rotation as well as all queued rotations will be canceled.
-        """
-        if self.__rotation_controller_thread is None or not self.__rotation_controller_thread.is_alive():
-            raise NotStartedException(
-                "Servo {} wasn't running but tried to shut down".format(self.__class__.__name__[1:]))
-        else:
-            self.__block_rotate_method = True
-            if interrupt:
-                self.clear_queue()
-            self.wait()
-            if final_rotation is not None:
-                self.__queue.put(final_rotation)
-            self.wait()
-            self.__shutdown_rotation_controller = True
-            self.__rotation_controller_thread.join()
-
     def get_rotation(self):
         return _kit.servo[self.__channel_number].angle
 
     def print_performed_rotations(self, bol):
         self.__print_rotations = bol
-        return self
-
-    def to_default(self):
-        self.rotate(self.__default_degree)
-        return self
-
-    def join(self, timout=None):
-        if self.__rotation_controller_thread is not None:
-            self.__rotation_controller_thread.join(timout)
         return self
 
     def is_running(self):
@@ -255,6 +272,34 @@ class ServoController:
 
     def __init__(self, *servos):
         self.servos = servos  # type: Tuple[Servo]
+
+    def start(self):
+        """
+        starts the Thread of every servo which is performing queued rotations
+        """
+        for servo in self.servos:
+            if not servo.is_running():
+                servo.start()
+        return self
+
+    def finish_and_shutdown(self, *args, interrupt=False):
+        """
+        ensures the last rotation of the Servo in the servo list with the same index as the args position is the angle given in args
+        if you don t want to change the angle of servos but servos behind these,
+        arg at the index for these should be None
+        if interrupt is True, it won't wait for all queued rotations to be performed and
+        instead cancels all currently performed rotations and clears the queues
+        """
+        for i, servo in enumerate(self.servos):
+            threading.Thread(target=servo.shutdown, args=(args[i] if i < len(args) else None,),
+                             kwargs={"interrupt": interrupt},
+                             daemon=True).start()
+        return self
+
+    def wait_for_shutdown(self, timeout=None):
+        for servo in self.servos:
+            servo.join(timeout)
+        return self
 
     def clear_all_queues(self):
         """
@@ -277,36 +322,8 @@ class ServoController:
             servo.to_default()
         return self
 
-    def finish_and_shutdown(self, *args, interrupt=False):
-        """
-        ensures the last rotation of the Servo in the servo list with the same index as the args position is the angle given in args
-        if you don t want to change the angle of servos but servos behind these,
-        arg at the index for these should be None
-        if interrupt is True, it won't wait for all queued rotations to be performed and
-        instead cancels all currently performed rotations and clears the queues
-        """
-        for i, servo in enumerate(self.servos):
-            threading.Thread(target=servo.shutdown, args=(args[i] if i < len(args) else None,),
-                             kwargs={"interrupt": interrupt},
-                             daemon=True).start()
-        return self
-
-    def wait_for_shutdown(self, timeout=None):
-        for servo in self.servos:
-            servo.join(timeout)
-        return self
-
     def is_running(self):
         return all([servo.is_running() for servo in self.servos])
-
-    def start(self):
-        """
-        starts the Thread of every servo which is performing queued rotations
-        """
-        for servo in self.servos:
-            if not servo.is_running():
-                servo.start()
-        return self
 
     def print_performed_rotations(self, bol):
         for servo in self.servos:

@@ -36,6 +36,10 @@ class _Clutch(Servo):
         return self.rotate(cons.CLUTCH.RELEASE)
 
 
+class AlreadyActivatedException(Exception):
+    pass
+
+
 class _EezybotServoController(ServoController):
 
     def __init__(self):
@@ -65,9 +69,11 @@ class _EezybotServoController(ServoController):
         """
         Eezybot must be started to activate Key Listeners
         Key Listener is stopping when Eezybot shuts down
+
+        :raises AlreadyActivatedException
         """
         if self.__key_listener_activated:
-            raise Exception("Key Listeners are already activated")
+            raise AlreadyActivatedException("Key Listeners are already activated")
         else:
             self.__key_listener_activated = True
             threading.Thread(target=self.__key_listener, daemon=True).start()
