@@ -34,8 +34,8 @@ def _map_action_to_action_tuple():
     for base_angle in range(ENV.SERVO_SPACE):
         for arm_vertical_angle in range(ENV.SERVO_SPACE):
             for arm_horizontal_angle in range(ENV.SERVO_SPACE):
-                actions.append(((base_angle - ENV.STEP_SIZE) * 5, (arm_vertical_angle - ENV.STEP_SIZE) * 5,
-                                (arm_horizontal_angle - ENV.STEP_SIZE) * 5))
+                actions.append(((base_angle - ENV.STEP_SIZE) * 5, (arm_vertical_angle - ENV.STEP_SIZE) * 10,
+                                (arm_horizontal_angle - ENV.STEP_SIZE) * 10))
     return actions
 
 
