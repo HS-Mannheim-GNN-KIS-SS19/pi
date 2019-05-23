@@ -7,6 +7,7 @@ import raspi_camera
 from constants import ENV
 from eezybot_controller import eezybot
 from image_processing_interface import *
+from servo_controller import OutOfBoundsException
 
 
 def _take_picture():
@@ -14,7 +15,8 @@ def _take_picture():
 
 
 def _get_current_state() -> (float, float, float):
-    return get_state()
+    state = get_state()
+    return state if state is not None else (0, 0, 0)
 
 
 def vectorLength(vector):
@@ -31,11 +33,12 @@ def _radius_reward(old_r, new_r):
 
 def _map_action_to_action_tuple():
     actions = []
-    for base_angle in range(ENV.SERVO_SPACE):
-        for arm_vertical_angle in range(ENV.SERVO_SPACE):
-            for arm_horizontal_angle in range(ENV.SERVO_SPACE):
-                actions.append(((base_angle - ENV.STEP_SIZE) * 5, (arm_vertical_angle - ENV.STEP_SIZE) * 10,
-                                (arm_horizontal_angle - ENV.STEP_SIZE) * 10))
+    for base_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
+        for arm_vertical_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
+            for arm_horizontal_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
+                actions.append(((base_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.BASE,
+                                (arm_vertical_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.VERTICAL,
+                                (arm_horizontal_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.HORIZONTAL))
     return actions
 
 
@@ -68,9 +71,10 @@ class EezybotEnv(gym.Env):
         self.image = None
 
         # Coordinate min/maxs
-        # TODO: set to smallest/biggest distance from eezybot to marble
+        # TODO: Usage?
         self.min_distance_to_eezybot = 0
         self.max_distance_to_eezybot = float('inf')
+
         # Should be 27 actions: 3 servos ^ 3 actions
         self.action_space = spaces.Discrete(ENV.ACTION_SPACE)
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
@@ -79,40 +83,43 @@ class EezybotEnv(gym.Env):
 
         self.reward_range = (-float('inf'), float('inf'))
 
-        self.episode_over = False
-
         self.actions_tuple = _map_action_to_action_tuple()
-        self.state = _get_current_state()
-        if self.state is None:
-            self.episode_over = True
+        self.state = None
         self.reset()
 
-    def _resolve_reward(self, old_state, new_state):
-        if(old_state is None or new_state is None):
-            return -1
+    def _resolve_reward(self, old_state, new_state, rotation_successful):
+        if new_state == (0, 0, 0) or not rotation_successful:
+            return self.reward_range[0]
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
         r_reward = _radius_reward(old_state[2], old_state[2])
-        return d_reward * r_reward
+        return d_reward * r_reward * ENV.REWARD_MULTIPLICATOR
 
     # TODO
-    def _is_episode_over(self, new_state):
-        return self.episode_over
+    def _is_episode_over(self, new_state, rotation_successful):
+        if new_state == (0, 0, 0) or not rotation_successful:
+            return True
+        return False
 
     def _take_action(self, action):
         base_angle, arm_vertical_angle, arm_horizontal_angle = self.actions_tuple[action]
+        rotation_successful = True
         try:
             eezybot.base.step(base_angle)
-        except Exception:
-            print("Exception!!!")
+        except OutOfBoundsException as e:
+            print(e)
+            rotation_successful = False
         try:
             eezybot.verticalArm.step(arm_vertical_angle)
-        except Exception:
-            print("Exception!!!")
+        except OutOfBoundsException as e:
+            print(e)
+            rotation_successful = False
         try:
             eezybot.horizontalArm.step(arm_horizontal_angle)
-        except Exception:
-            print("Exception!!!")
+        except OutOfBoundsException as e:
+            print(e)
+            rotation_successful = False
         eezybot.start().finish_and_shutdown()
+        return rotation_successful
 
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
@@ -129,22 +136,20 @@ class EezybotEnv(gym.Env):
         """
 
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
-        self._take_action(action)
+        rotation_successful = self._take_action(action)
         old_state = self.state
         eezybot.wait_for_shutdown()
         self.state = _get_current_state()
-        if self.state is None:
-            return (0, 0, 0), -1, True, {}
-        reward = self._resolve_reward(old_state, self.state)
-        self.episode_over = self._is_episode_over(self.state)
-        return self.state, reward, self.episode_over, {}
+        reward = self._resolve_reward(old_state, self.state, rotation_successful)
+        episode_over = self._is_episode_over(self.state, rotation_successful)
+        return self.state, reward, episode_over, {}
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
          Returns:
              observation (object): the initial observation.
          """
-        # Initial state
+
         eezybot.start().to_default_and_shutdown().wait_for_shutdown()
         return _get_current_state()
 

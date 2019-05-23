@@ -28,11 +28,15 @@ Set channels to the number of servo channels on your kit.
 _kit = adafruit_servokit.ServoKit(channels=8)
 
 
-class AngleTooLittleException(Exception):
+class OutOfBoundsException(Exception):
     pass
 
 
-class AngleTooBigException(Exception):
+class AngleTooLittleException(OutOfBoundsException):
+    pass
+
+
+class AngleTooBigException(OutOfBoundsException):
     pass
 
 
@@ -141,13 +145,16 @@ class Servo:
         """
         if self.__block_rotate_method:
             raise ShutDownException(
-                "Can not perform rotation to {}: Servo Controller is shutting down".format(angle))
+                "{} can not perform rotation to {}: Servo Controller is shutting down".format(
+                    self.__class__.__name__[1:], angle))
         elif angle < self.__min_degrees:
             raise AngleTooLittleException(
-                "Rotation out of Bounds: cur: {} < min: {}".format(angle, self.__min_degrees))
+                "{} Rotation out of Bounds: cur: {} < min: {}".format(self.__class__.__name__[1:], angle,
+                                                                      self.__min_degrees))
         elif angle > self.__max_degrees:
             raise AngleTooBigException(
-                "Rotation out of Bounds: cur: {} > max: {}".format(angle, self.__max_degrees))
+                "{} Rotation out of Bounds: cur: {} > max: {}".format(self.__class__.__name__[1:], angle,
+                                                                      self.__max_degrees))
         else:
             self.__queue.put(angle)
         return self

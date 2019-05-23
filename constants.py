@@ -1,4 +1,4 @@
-USE_FAKE_CONTROLLER = False
+USE_FAKE_CONTROLLER = True
 
 
 # TODO min, max werte auf -1 bis 1 umstellen oder so
@@ -48,7 +48,12 @@ class IMAGE_PROCESSING:
 
 
 class ENV:
-    STEP_SIZE = 1
-    SERVO_SPACE = STEP_SIZE * 2 + 1
-    ACTION_SPACE = (STEP_SIZE * 2 + 1) ** 3
-    ERROR_TOLERANCE = 1
+    STEP_RANGE = 1
+    SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2 + 1
+    ACTION_SPACE = (STEP_RANGE * 2 + 1) ** 3
+    REWARD_MULTIPLICATOR = 10
+
+    class STEP_SIZE_OF:
+        BASE = 5
+        VERTICAL = 10
+        HORIZONTAL = 10
