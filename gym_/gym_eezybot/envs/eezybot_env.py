@@ -5,7 +5,6 @@ from gym import spaces
 
 import raspi_camera
 from constants import ENV
-from image_processing_interface import *
 from eezybot_controller import eezybot
 from image_processing_interface import *
 
@@ -35,8 +34,8 @@ def _map_action_to_action_tuple():
     for base_angle in range(ENV.SERVO_SPACE):
         for arm_vertical_angle in range(ENV.SERVO_SPACE):
             for arm_horizontal_angle in range(ENV.SERVO_SPACE):
-                actions.append((base_angle - ENV.STEP_SIZE, arm_vertical_angle - ENV.STEP_SIZE,
-                                arm_horizontal_angle - ENV.STEP_SIZE))
+                actions.append(((base_angle - ENV.STEP_SIZE) * 5, (arm_vertical_angle - ENV.STEP_SIZE) * 5,
+                                (arm_horizontal_angle - ENV.STEP_SIZE) * 5))
     return actions
 
 
@@ -84,22 +83,35 @@ class EezybotEnv(gym.Env):
 
         self.actions_tuple = _map_action_to_action_tuple()
         self.state = _get_current_state()
+        if self.state is None:
+            self.episode_over = True
         self.reset()
 
     def _resolve_reward(self, old_state, new_state):
+        if(old_state is None or new_state is None):
+            return -1
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
         r_reward = _radius_reward(old_state[2], old_state[2])
         return d_reward * r_reward
 
     # TODO
     def _is_episode_over(self, new_state):
-        return False
+        return self.episode_over
 
     def _take_action(self, action):
         base_angle, arm_vertical_angle, arm_horizontal_angle = self.actions_tuple[action]
-        eezybot.base.rotate(base_angle)
-        eezybot.verticalArm.rotate(arm_vertical_angle)
-        eezybot.horizontalArm.rotate(arm_horizontal_angle)
+        try:
+            eezybot.base.step(base_angle)
+        except Exception:
+            print("Exception!!!")
+        try:
+            eezybot.verticalArm.step(arm_vertical_angle)
+        except Exception:
+            print("Exception!!!")
+        try:
+            eezybot.horizontalArm.step(arm_horizontal_angle)
+        except Exception:
+            print("Exception!!!")
         eezybot.start().finish_and_shutdown()
 
     def step(self, action):
@@ -121,6 +133,8 @@ class EezybotEnv(gym.Env):
         old_state = self.state
         eezybot.wait_for_shutdown()
         self.state = _get_current_state()
+        if self.state is None:
+            return (0, 0, 0), -1, True, {}
         reward = self._resolve_reward(old_state, self.state)
         self.episode_over = self._is_episode_over(self.state)
         return self.state, reward, self.episode_over, {}

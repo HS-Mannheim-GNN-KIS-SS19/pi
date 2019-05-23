@@ -5,6 +5,9 @@ def get_state():
     map = detect((100, 0, 0), (255, 255, 255))
     marbles = map["marbles"]
 
+    if marbles is None or len(marbles) == 0:
+        return None
+
     biggest = marbles[0]
     for i in range(len(marbles)):
         if marbles[i][2] > biggest[2]:

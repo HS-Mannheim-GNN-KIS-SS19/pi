@@ -23,11 +23,11 @@ def testBoth():
     servo_test_max()
     eezybot.wait_for_all()
     servo_test_min()
-    eezybot.to_default()
+    eezybot.wait_for_all()
+    eezybot.to_default().wait_for_all()
 
 
 eezybot.start().print_performed_rotations(True).activate_key_listener()
 testBoth()
 print("ready")
 sleep(10000)
-

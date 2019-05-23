@@ -7,12 +7,10 @@ import numpy as np
 from imutils import contours
 
 EXECUTE_IN_PYTHON2 = False
-USE_IMAGE_NOT_CAMERA = True
+USE_IMAGE_NOT_CAMERA = False
 
 
 def _find_marbles(image, color_lower, color_upper):
-    print("lower " + str(color_lower))
-    print("upper " + str(color_lower))
     if image.shape != (256, 256, 3):
         image = cv2.resize(image, (256, 256))
 
@@ -47,7 +45,7 @@ def _main(color_lower, color_upper):
     else:
         import raspi_camera
 
-        image = raspi_camera.picture()
+        image = raspi_camera.take_picture()
 
     return {
         "shape": image.shape,

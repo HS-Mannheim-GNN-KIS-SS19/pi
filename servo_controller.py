@@ -169,6 +169,10 @@ class Servo:
         self.rotate(self.__default_degree)
         return self
 
+    def step(self, value):
+        self.rotate(ensure_in_bounds(self.get_rotation()) + value)
+        return self
+
     """-----------------------------WAIT----------------------------------------------------"""
 
     def join(self, timout=None):
