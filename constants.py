@@ -62,5 +62,10 @@ class ENV:
 class AI:
     ENV_NAME = 'EezybotEnv-v0'
     FILEPATH = 'dqn_{}_weights.h5f'.format(ENV_NAME)
-    STEPS = 1000
+    STEPS = 100
     LEARN_RATE = 0.001
+
+    class LAYER_SIZE:
+        FIRST = 64
+        SECOND = 128
+        THIRD = 64
