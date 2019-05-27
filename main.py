@@ -26,15 +26,25 @@ def register_env():
 
 
 if __name__ == '__main__':
+    train = False
+    new = False
     # -r arg to reinstall the gym env
-    if len(sys.argv) > 1 and sys.argv[1] == '-r':
-        reinstall_env()
+    for i in range(len(sys.argv) - 1):
+        if sys.argv[i + 1] == '-reset' or sys.argv[i + 1] == '-r':
+            reinstall_env()
+        elif sys.argv[i + 1] == '-train' or sys.argv[i + 1] == '-t':
+            train = True
+
+        elif sys.argv[i + 1] == '-new' or sys.argv[i + 1] == '-n':
+            new = True
+        else:
+            raise ValueError("There is no argument {} for main.py".format(sys.argv[i + 1]))
 
     print('registering env...')
     register_env()
 
     while True:
-        ai_interface.go_to_marble()
+        ai_interface.go_to_marble(train, new)
         eezybot.clutch.grab()
         ai_interface.go_to_destination()
         eezybot.clutch.release()

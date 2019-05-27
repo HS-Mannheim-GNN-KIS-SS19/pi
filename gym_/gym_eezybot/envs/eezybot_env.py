@@ -92,7 +92,7 @@ class EezybotEnv(gym.Env):
             return self.reward_range[0]
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
         r_reward = _radius_reward(old_state[2], old_state[2])
-        return d_reward * r_reward * ENV.REWARD_MULTIPLICATOR
+        return d_reward * r_reward * ENV.REWARD_MULTIPLIER
 
     # TODO
     def _is_episode_over(self, new_state, rotation_successful):

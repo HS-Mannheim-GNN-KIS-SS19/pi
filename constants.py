@@ -1,4 +1,4 @@
-USE_FAKE_CONTROLLER = True
+USE_FAKE_CONTROLLER = False
 
 
 # TODO min, max werte auf -1 bis 1 umstellen oder so
@@ -51,9 +51,16 @@ class ENV:
     STEP_RANGE = 1
     SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2 + 1
     ACTION_SPACE = (STEP_RANGE * 2 + 1) ** 3
-    REWARD_MULTIPLICATOR = 10
+    REWARD_MULTIPLIER = 10
 
     class STEP_SIZE_OF:
         BASE = 5
         VERTICAL = 10
         HORIZONTAL = 10
+
+
+class AI:
+    ENV_NAME = 'EezybotEnv-v0'
+    FILEPATH = 'dqn_{}_weights.h5f'.format(ENV_NAME)
+    STEPS = 1000
+    LEARN_RATE = 0.001

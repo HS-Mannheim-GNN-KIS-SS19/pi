@@ -132,6 +132,7 @@ class Servo:
             self.wait()
             self.__shutdown_rotation_controller = True
             self.__rotation_controller_thread.join()
+        return self
 
     """-----------------------------ADD ROTATION TO QUEUE----------------------------------------------------"""
 

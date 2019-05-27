@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 
+from constants import AI
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten
 from keras.optimizers import Adam
@@ -10,12 +11,11 @@ from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
 
-class EezybotDQN:
-    def __init__(self):
+class EezybotDQN():
+    def __init__(self, train=True, create_new=False):
         # Get the environment and extract the number of actions.
-        ENV_NAME = 'EezybotEnv-v0'
         print('building gym...')
-        env = gym.make(ENV_NAME)
+        env = gym.make(AI.ENV_NAME)
 
         np.random.seed(123)
         nb_actions = env.action_space.n
@@ -33,23 +33,29 @@ class EezybotDQN:
         model.add(Dense(nb_actions))
         model.add(Activation('linear'))
         print(model.summary())
-
+        if not create_new:
+            try:
+                model.load_weights(AI.FILEPATH)
+            except FileNotFoundError:
+                print("No saved weights found")
         # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
         # even the metrics!
         memory = SequentialMemory(limit=1000, window_length=1)
         policy = BoltzmannQPolicy()
         dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=10,
                        target_model_update=1e-2, policy=policy)
-        dqn.compile(Adam(lr=0.001), metrics=['mae'])
 
+        dqn.compile(Adam(lr=AI.LEARN_RATE), metrics=['mae'])
+        dqn.load_weights()
         # Okay, now it's time to learn something! We visualize the training here for show, but this
         # slows down training quite a lot. You can always safely abort the training prematurely using
         # Ctrl + C.
-        print('starting learning...')
-        dqn.fit(env, nb_steps=1000, visualize=True, verbose=2)
+        if train:
+            print('start learning...')
+            dqn.fit(env, nb_steps=AI.STEPS, visualize=True, verbose=2)
 
-        # After training is done, we save the final weights.
-        dqn.save_weights('dqn_{}_weights.h5f'.format(ENV_NAME), overwrite=True)
-
-        # Finally, evaluate our algorithm for 5 episodes.
-        dqn.test(env, nb_episodes=5, visualize=True)
+            # After training is done, we save the final weights.
+            dqn.save_weights(AI.FILEPATH, overwrite=True)
+        else:
+            # Finally, evaluate our algorithm for 5 episodes.
+            dqn.test(env, nb_episodes=5, visualize=True)
