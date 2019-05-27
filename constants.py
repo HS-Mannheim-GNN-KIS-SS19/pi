@@ -67,5 +67,5 @@ class AI:
 
     class LAYER_SIZE:
         FIRST = 64
-        SECOND = 128
+        SECOND = 64
         THIRD = 64
