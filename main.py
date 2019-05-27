@@ -45,6 +45,6 @@ if __name__ == '__main__':
 
     while True:
         ai_interface.go_to_marble(train, new)
-        eezybot.clutch.grab()
+        eezybot.clutch.start().grab().shutdown().join()
         ai_interface.go_to_destination()
-        eezybot.clutch.release()
+        eezybot.clutch.start().release().shutdown().join()
