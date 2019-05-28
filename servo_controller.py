@@ -4,6 +4,8 @@ import threading
 import time
 import sys
 from typing import Tuple
+
+import reward_test
 from constants import STEP, USE_FAKE_CONTROLLER, MANUEL_CONTROL
 from key_listener import KeyListener
 
@@ -373,6 +375,13 @@ class ServoKeyListener(KeyListener):
 
         self.step_size = MANUEL_CONTROL.STEP
 
+        self.state = reward_test.get_current_state()
+
+        def print_rewards():
+            old_state = self.state
+            self.state = reward_test.get_current_state()
+            print(reward_test.resolve_rewards(old_state, self.state))
+
         def step_size_up():
             self.step_size += 1
             print("Step Size increased to {}".format(self.step_size))
@@ -384,13 +393,15 @@ class ServoKeyListener(KeyListener):
         def step_up(servo):
             angle = servo.wait().get_rotation() + self.step_size
             servo.rotate(bounds_check(angle, servo.min_degree, servo.max_degree))
+            print_rewards()
 
         def step_down(servo):
             angle = servo.wait().get_rotation() - self.step_size
             servo.rotate(bounds_check(angle, servo.min_degree, servo.max_degree))
+            print_rewards()
 
+        func_dictionary.update({step_control[0]: (step_size_up,), step_control[1]: (step_size_down,)})
         for servo_tuple in servo_tuples:
             func_dictionary.update(
                 {servo_tuple[1]: (step_up, servo_tuple[0]), servo_tuple[2]: (step_down, servo_tuple[0])})
-        func_dictionary.update({step_control[0]: (step_size_up,), step_control[1]: (step_size_down,)})
         super().__init__(func_dictionary, until, until_func)
