@@ -34,7 +34,6 @@ if __name__ == '__main__':
             reinstall_env()
         elif sys.argv[i + 1] == '-train' or sys.argv[i + 1] == '-t':
             train = True
-
         elif sys.argv[i + 1] == '-new' or sys.argv[i + 1] == '-n':
             new = True
         else:

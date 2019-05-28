@@ -10,24 +10,20 @@ from image_processing_interface import *
 from servo_controller import OutOfBoundsException
 
 
-def _take_picture():
-    return raspi_camera.take_picture()
-
-
-def _get_current_state() -> (float, float, float):
+def get_current_state() -> (float, float, float):
     state = get_state()
     return state if state is not None else (0, 0, 0)
 
 
-def vectorLength(vector):
+def vector_length(vector):
     return np.math.sqrt(sum(i ** 2 for i in vector))
 
 
-def _distance_reward(old_state, new_state):
-    return vectorLength(new_state) - vectorLength(old_state)
+def distance_reward(old_state, new_state):
+    return vector_length(new_state) - vector_length(old_state)
 
 
-def _radius_reward(old_r, new_r):
+def radius_reward(old_r, new_r):
     return new_r - old_r
 
 
@@ -40,6 +36,17 @@ def _map_action_to_action_tuple():
                                 (arm_vertical_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.VERTICAL,
                                 (arm_horizontal_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.HORIZONTAL))
     return actions
+
+
+def resolve_reward(old_state, new_state, rotation_successful):
+    if new_state == (0, 0, 0) or not rotation_successful:
+        return -10
+    d_reward = distance_reward(old_state[0:2], new_state[0:2])
+    r_reward = radius_reward(old_state[2], new_state[2])
+    reward = d_reward * ENV.D_REWARD_MULTIPLIER + r_reward * ENV.R_REWARD_MULTIPLIER
+    print("{} = d_reward: {} + r_reward: {}".format(reward, d_reward * ENV.D_REWARD_MULTIPLIER,
+                                                    r_reward * ENV.R_REWARD_MULTIPLIER))
+    return reward
 
 
 class EezybotEnv(gym.Env):
@@ -86,15 +93,6 @@ class EezybotEnv(gym.Env):
         self.actions_tuple = _map_action_to_action_tuple()
         self.reset()
 
-    def _resolve_reward(self, old_state, new_state, rotation_successful):
-        if new_state == (0, 0, 0) or not rotation_successful:
-            return -10
-        d_reward = _distance_reward(old_state[0:2], new_state[0:2])
-        r_reward = _radius_reward(old_state[2], new_state[2])
-        reward = d_reward * ENV.D_REWARD_MULTIPLIER + r_reward * ENV.R_REWARD_MULTIPLIER
-        print("{} = d_reward: {} + r_reward: {}".format(reward, d_reward * ENV.D_REWARD_MULTIPLIER, r_reward * ENV.R_REWARD_MULTIPLIER))
-        return reward
-
     # TODO
     def _is_episode_over(self, new_state, rotation_successful):
         if new_state == (0, 0, 0) or not rotation_successful:
@@ -140,8 +138,8 @@ class EezybotEnv(gym.Env):
         rotation_successful = self._take_action(action)
         old_state = self.state
         eezybot.wait_for_shutdown()
-        self.state = _get_current_state()
-        reward = self._resolve_reward(old_state, self.state, rotation_successful)
+        self.state = get_current_state()
+        reward = resolve_reward(old_state, self.state, rotation_successful)
         episode_over = self._is_episode_over(self.state, rotation_successful)
         return self.state, reward, episode_over, {}
 
@@ -152,7 +150,7 @@ class EezybotEnv(gym.Env):
          """
 
         eezybot.start().to_default_and_shutdown().wait_for_shutdown()
-        self.state = _get_current_state()
+        self.state = get_current_state()
         return self.state
 
     def render(self, mode='human', close=False):

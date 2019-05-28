@@ -4,7 +4,8 @@ import threading
 import time
 import sys
 from typing import Tuple
-from constants import STEP, USE_FAKE_CONTROLLER
+from constants import STEP, USE_FAKE_CONTROLLER, MANUEL_CONTROL
+from key_listener import KeyListener
 
 if not USE_FAKE_CONTROLLER:
     import adafruit_servokit
@@ -76,9 +77,9 @@ class Servo:
             from queue import Queue
 
         # Bounds
-        self.__min_degrees = min_degree
-        self.__default_degree = default_degree
-        self.__max_degrees = max_degree
+        self.min_degree = min_degree
+        self.default_degree = default_degree
+        self.max_degree = max_degree
 
         # Components
         self.__channel_number = channel_number
@@ -148,14 +149,14 @@ class Servo:
             raise ShutDownException(
                 "{} can not perform rotation to {}: Servo Controller is shutting down".format(
                     self.__class__.__name__[1:], angle))
-        elif angle < self.__min_degrees:
+        elif angle < self.min_degree:
             raise AngleTooLittleException(
                 "{} Rotation out of Bounds: cur: {} < min: {}".format(self.__class__.__name__[1:], angle,
-                                                                      self.__min_degrees))
-        elif angle > self.__max_degrees:
+                                                                      self.min_degree))
+        elif angle > self.max_degree:
             raise AngleTooBigException(
                 "{} Rotation out of Bounds: cur: {} > max: {}".format(self.__class__.__name__[1:], angle,
-                                                                      self.__max_degrees))
+                                                                      self.max_degree))
         else:
             self.__queue.put(angle)
         return self
@@ -164,7 +165,7 @@ class Servo:
         """
         resolves degree from relative value
         """
-        return self.__min_degrees + int(value * (self.__max_degrees - self.__min_degrees))
+        return self.min_degree + int(value * (self.max_degree - self.min_degree))
 
     def rotate_relative(self, value):
         """
@@ -174,7 +175,7 @@ class Servo:
         return self
 
     def to_default(self):
-        self.rotate(self.__default_degree)
+        self.rotate(self.default_degree)
         return self
 
     def step(self, value):
@@ -341,3 +342,55 @@ class ServoController:
         for servo in self.servos:
             servo.print_performed_rotations(bol)
         return self
+
+
+class ServoKeyListener(KeyListener):
+
+    def __init__(self, *servo_tuples, step_control=("o", "p"), func_dictionary={}, until=True,
+                 until_func=KeyListener.true_func):
+        """
+            calls given function when corresponding key is entered on console
+
+            Note: Using the same key in a servo_tuple and the funcDictionary is not possible.
+            This will result in the entry in the funcDictionary disappearing !!!
+
+        :param servo_tuples: Tuple containing a servo on position 0 and two key for stepping up and down
+                            ("key1", "key2", servo),("key3", "key4", servo)
+        :param step_control: Tuple containing 2 key for increasing and decreasing step size
+        :param func_dictionary: a python dictionary containing Tuples with a function and args as values
+                    {"key":(func, arg1, arg2...),
+                    "key2":(func2, arg1, arg2...)}
+        :param until: boolean flag stopping the  key checking Thread if True
+        :param until_func: function returning a boolean, stopping the  key checking Thread if True
+        """
+
+        def bounds_check(angle, min, max):
+            if angle < min:
+                return min
+            elif angle > max:
+                return max
+            return angle
+
+        self.step_size = MANUEL_CONTROL.STEP
+
+        def step_size_up():
+            self.step_size += 1
+            print("Step Size increased to {}".format(self.step_size))
+
+        def step_size_down():
+            self.step_size -= 1
+            print("Step Size decreased to {}".format(self.step_size))
+
+        def step_up(servo):
+            angle = servo.wait().get_rotation() + self.step_size
+            servo.rotate(bounds_check(angle, servo.min_degree, servo.max_degree))
+
+        def step_down(servo):
+            angle = servo.wait().get_rotation() - self.step_size
+            servo.rotate(bounds_check(angle, servo.min_degree, servo.max_degree))
+
+        for servo_tuple in servo_tuples:
+            func_dictionary.update(
+                {servo_tuple[1]: (step_up, servo_tuple[0]), servo_tuple[2]: (step_down, servo_tuple[0])})
+        func_dictionary.update({step_control[0]: (step_size_up,), step_control[1]: (step_size_down,)})
+        super().__init__(func_dictionary, until, until_func)
