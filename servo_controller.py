@@ -8,6 +8,7 @@ from typing import Tuple
 import reward_test
 from constants import STEP, USE_FAKE_CONTROLLER, MANUEL_CONTROL
 from key_listener import KeyListener
+import reward_calculation
 
 if not USE_FAKE_CONTROLLER:
     import adafruit_servokit
@@ -375,12 +376,12 @@ class ServoKeyListener(KeyListener):
 
         self.step_size = MANUEL_CONTROL.STEP
 
-        self.state = reward_test.get_current_state()
+        self.state = reward_calculation.get_current_state()
 
         def print_rewards():
             old_state = self.state
-            self.state = reward_test.get_current_state()
-            print(reward_test.resolve_rewards(old_state, self.state))
+            self.state = reward_calculation.get_current_state()
+            print(reward_calculation.resolve_rewards(old_state, self.state))
 
         def step_size_up():
             self.step_size += 1
