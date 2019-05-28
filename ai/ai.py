@@ -36,13 +36,13 @@ class EezybotDQN():
         if not create_new:
             try:
                 model.load_weights(AI.FILEPATH)
-            except FileNotFoundError:
+            except OSError:
                 print("No saved weights found")
         # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
         # even the metrics!
         memory = SequentialMemory(limit=1000, window_length=1)
         policy = BoltzmannQPolicy()
-        dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=10,
+        dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=30,
                        target_model_update=1e-2, policy=policy)
 
         dqn.compile(Adam(lr=AI.LEARN_RATE), metrics=['mae'])
@@ -55,6 +55,7 @@ class EezybotDQN():
 
             # After training is done, we save the final weights.
             dqn.save_weights(AI.FILEPATH, overwrite=True)
+            print("saved weights")
         else:
             # Finally, evaluate our algorithm for 5 episodes.
             dqn.test(env, nb_episodes=5, visualize=True)

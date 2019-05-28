@@ -84,15 +84,16 @@ class EezybotEnv(gym.Env):
         self.reward_range = (-float('inf'), float('inf'))
 
         self.actions_tuple = _map_action_to_action_tuple()
-        self.state = None
         self.reset()
 
     def _resolve_reward(self, old_state, new_state, rotation_successful):
         if new_state == (0, 0, 0) or not rotation_successful:
-            return self.reward_range[0]
+            return -10
         d_reward = _distance_reward(old_state[0:2], new_state[0:2])
-        r_reward = _radius_reward(old_state[2], old_state[2])
-        return d_reward * r_reward * ENV.REWARD_MULTIPLIER
+        r_reward = _radius_reward(old_state[2], new_state[2])
+        reward = d_reward * ENV.D_REWARD_MULTIPLIER + r_reward * ENV.R_REWARD_MULTIPLIER
+        print("{} = d_reward: {} + r_reward: {}".format(reward, d_reward * ENV.D_REWARD_MULTIPLIER, r_reward * ENV.R_REWARD_MULTIPLIER))
+        return reward
 
     # TODO
     def _is_episode_over(self, new_state, rotation_successful):
@@ -151,7 +152,8 @@ class EezybotEnv(gym.Env):
          """
 
         eezybot.start().to_default_and_shutdown().wait_for_shutdown()
-        return _get_current_state()
+        self.state = _get_current_state()
+        return self.state
 
     def render(self, mode='human', close=False):
         """Renders the environment.
@@ -176,8 +178,8 @@ class EezybotEnv(gym.Env):
         if self.image is not None:
             cv2.imshow('live view', self.image)
             cv2.waitKey(1)
-        else:
-            print("current state: {}".format(self.state))
+        # else:
+        #     print("current state: {}".format(self.state))
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
