@@ -373,13 +373,14 @@ class ServoKeyListener(KeyListener):
     def __init__(self, *servo_tuples, step_control=("o", "p"), func_dictionary={}, until=True,
                  until_func=KeyListener.true_func):
         """
+
             calls given function when corresponding key is entered on console
 
-            Note: Using the same key in a servo_tuple and the funcDictionary is not possible.
-            This will result in the entry in the funcDictionary disappearing !!!
+            Note: Using the same key in a servo_tuple, step_control and the func_dictionary is not possible.
+            This will result in the entries being overwritten func_dictionary < step_control < servo_tuple !!!
 
         :param servo_tuples: Tuple containing a servo on position 0 and two key for stepping up and down
-                            ("key1", "key2", servo),("key3", "key4", servo)
+                            (servo,"key1", "key2"), (servo,"key3", "key4")
         :param step_control: Tuple containing 2 key for increasing and decreasing step size
         :param func_dictionary: a python dictionary containing Tuples with a function and args as values
                     {"key":(func, arg1, arg2...),

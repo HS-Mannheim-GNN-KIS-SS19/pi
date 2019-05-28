@@ -9,12 +9,12 @@ class KeyListener:
     def true_func():
         return True
 
-    def __init__(self, dic, until=True, until_func=true_func):
+    def __init__(self, dictionary, until=True, until_func=true_func):
         """
 
             calls given function when corresponding key is entered on console
 
-        :param dic: a python dictionary containing Tuples with a function and args as values
+        :param dictionary: a python dictionary containing Tuples with a function and args as values
                     {"key":(func, arg1, arg2...),
                     "key2":(func2, arg1, arg2...)}
         :param until: boolean flag stopping the  key checking Thread if True
@@ -23,10 +23,10 @@ class KeyListener:
 
         def _check_key():
             while until and until_func():
-                in_key = sys.stdin.read(1)
+                input_key = sys.stdin.read(1)
 
-                for key, funcTuple in dic.items():
-                    if in_key is key:
+                for key, funcTuple in dictionary.items():
+                    if input_key is key:
                         funcTuple[0](*tuple(list(funcTuple)[1:]))
                 time.sleep(0.1)
 
