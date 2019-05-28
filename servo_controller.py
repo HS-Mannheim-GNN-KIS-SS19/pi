@@ -5,7 +5,6 @@ import threading
 import time
 from typing import Tuple
 
-import reward_calculation
 from constants import STEP, USE_FAKE_CONTROLLER, MANUEL_CONTROL
 from key_listener import KeyListener
 
@@ -347,6 +346,29 @@ class ServoController:
 
 
 class ServoKeyListener(KeyListener):
+    @staticmethod
+    def bounds_check(angle, min, max):
+        if angle < min:
+            return min
+        elif angle > max:
+            return max
+        return angle
+
+    def step_up(self, servo):
+        angle = servo.wait().get_rotation() + self.step_size
+        servo.rotate(self.bounds_check(angle, servo.min_degree, servo.max_degree))
+
+    def step_down(self, servo):
+        angle = servo.wait().get_rotation() - self.step_size
+        servo.rotate(self.bounds_check(angle, servo.min_degree, servo.max_degree))
+
+    def step_size_up(self):
+        self.step_size += 1
+        print("Step Size increased to {}".format(self.step_size))
+
+    def step_size_down(self):
+        self.step_size -= 1
+        print("Step Size decreased to {}".format(self.step_size))
 
     def __init__(self, *servo_tuples, step_control=("o", "p"), func_dictionary={}, until=True,
                  until_func=KeyListener.true_func):
@@ -365,43 +387,10 @@ class ServoKeyListener(KeyListener):
         :param until: boolean flag stopping the  key checking Thread if True
         :param until_func: function returning a boolean, stopping the  key checking Thread if True
         """
-
-        def bounds_check(angle, min, max):
-            if angle < min:
-                return min
-            elif angle > max:
-                return max
-            return angle
-
         self.step_size = MANUEL_CONTROL.STEP
 
-        self.state = reward_calculation.get_current_state()
-
-        def print_rewards():
-            old_state = self.state
-            self.state = reward_calculation.get_current_state()
-            print(reward_calculation.resolve_rewards(old_state, self.state))
-
-        def step_size_up():
-            self.step_size += 1
-            print("Step Size increased to {}".format(self.step_size))
-
-        def step_size_down():
-            self.step_size -= 1
-            print("Step Size decreased to {}".format(self.step_size))
-
-        def step_up(servo):
-            angle = servo.wait().get_rotation() + self.step_size
-            servo.rotate(bounds_check(angle, servo.min_degree, servo.max_degree))
-            print_rewards()
-
-        def step_down(servo):
-            angle = servo.wait().get_rotation() - self.step_size
-            servo.rotate(bounds_check(angle, servo.min_degree, servo.max_degree))
-            print_rewards()
-
-        func_dictionary.update({step_control[0]: (step_size_up,), step_control[1]: (step_size_down,)})
+        func_dictionary.update({step_control[0]: (self.step_size_up,), step_control[1]: (self.step_size_down,)})
         for servo_tuple in servo_tuples:
             func_dictionary.update(
-                {servo_tuple[1]: (step_up, servo_tuple[0]), servo_tuple[2]: (step_down, servo_tuple[0])})
+                {servo_tuple[1]: (self.step_up, servo_tuple[0]), servo_tuple[2]: (self.step_down, servo_tuple[0])})
         super().__init__(func_dictionary, until, until_func)
