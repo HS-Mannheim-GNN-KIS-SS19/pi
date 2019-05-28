@@ -28,6 +28,6 @@ def testBoth():
 
 
 eezybot.start().print_performed_rotations(True).activate_key_listener()
-testBoth()
+# testBoth()
 print("ready")
 sleep(10000)
