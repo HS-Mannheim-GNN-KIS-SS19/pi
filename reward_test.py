@@ -30,8 +30,6 @@ def resolve_rewards(old_state, new_state):
     d_reward = distance_reward(old_state[0:2], new_state[0:2])
     r_reward = radius_reward(old_state[2], new_state[2])
     reward = d_reward * ENV.D_REWARD_MULTIPLIER + r_reward * ENV.R_REWARD_MULTIPLIER
-    print("{} = d_reward: {} + r_reward: {}".format(reward, d_reward * ENV.D_REWARD_MULTIPLIER,
-                                                    r_reward * ENV.R_REWARD_MULTIPLIER))
     return "Reward: {}, Distance Reward: {}, Radius Reward: {}".format(reward, d_reward, r_reward)
 
 
