@@ -1,9 +1,5 @@
-import sys
-import threading
-import time
-
-from servo_controller import ServoController, Servo, ServoKeyListener
 import constants as cons
+from servo_controller import ServoController, Servo, ServoKeyListener
 
 
 class _Base(Servo):

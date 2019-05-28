@@ -1,14 +1,13 @@
 """Base Class Provider"""
 
+import sys
 import threading
 import time
-import sys
 from typing import Tuple
 
-import reward_test
+import reward_calculation
 from constants import STEP, USE_FAKE_CONTROLLER, MANUEL_CONTROL
 from key_listener import KeyListener
-import reward_calculation
 
 if not USE_FAKE_CONTROLLER:
     import adafruit_servokit
