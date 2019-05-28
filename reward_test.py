@@ -34,10 +34,11 @@ def resolve_rewards(old_state, new_state):
 
 
 state = get_current_state()
+eezybot.start()
 time.sleep(1)
-eezybot.start().activate_key_listener()
+eezybot.activate_key_listener()
 while True:
     old_state = state
     state = get_current_state()
-    print(resolve_rewards(old_state, state, True))
+    print(resolve_rewards(old_state, state))
     time.sleep(1)
