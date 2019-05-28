@@ -3,6 +3,7 @@ import time
 import numpy as np
 
 from constants import ENV
+from eezybot_controller import eezybot
 from image_processing_interface import get_state
 
 
@@ -36,6 +37,7 @@ def resolve_rewards(old_state, new_state):
 
 state = get_current_state()
 time.sleep(1)
+eezybot.start().activate_key_listener()
 while True:
     old_state = state
     state = get_current_state()
