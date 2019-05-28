@@ -41,6 +41,7 @@ class CLUTCH:
 
 class MANUEL_CONTROL:
     STEP = 5
+    RESOLVE_REWARDS = True
 
 
 class IMAGE_PROCESSING:

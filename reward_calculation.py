@@ -2,6 +2,7 @@ from constants import ENV
 from image_processing_interface import get_state
 import numpy as np
 
+
 def get_current_state() -> (float, float, float):
     state = get_state()
     return state if state is not None else (0, 0, 0)
