@@ -29,12 +29,9 @@ def radius_reward(old_r, new_r):
 
 def _map_action_to_action_tuple():
     actions = []
+
     for base_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-        for arm_vertical_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-            for arm_horizontal_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-                actions.append(((base_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.BASE,
-                                (arm_vertical_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.VERTICAL,
-                                (arm_horizontal_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.HORIZONTAL))
+        actions.append(((base_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.BASE, 0, 0))
     return actions
 
 
@@ -78,14 +75,14 @@ class EezybotEnv(gym.Env):
         self.image = None
 
         # Coordinate min/maxs
-        # TODO: Usage?
+        # TODO: Usage? None
         self.min_distance_to_eezybot = 0
         self.max_distance_to_eezybot = float('inf')
 
         # Should be 27 actions: 3 servos ^ 3 actions
         self.action_space = spaces.Discrete(ENV.ACTION_SPACE)
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
-        self.observation_space = spaces.Box(-1.0, 1.0, shape=(3,),
+        self.observation_space = spaces.Box(-64, 64, shape=(3,),
                                             dtype=np.float32)
 
         self.reward_range = (-float('inf'), float('inf'))
@@ -93,7 +90,7 @@ class EezybotEnv(gym.Env):
         self.actions_tuple = _map_action_to_action_tuple()
         self.reset()
 
-    # TODO
+    # TODO when clutch reached marble
     def _is_episode_over(self, new_state, rotation_successful):
         if new_state == (0, 0, 0) or not rotation_successful:
             return True
@@ -176,8 +173,8 @@ class EezybotEnv(gym.Env):
         if self.image is not None:
             cv2.imshow('live view', self.image)
             cv2.waitKey(1)
-        # else:
-        #     print("current state: {}".format(self.state))
+        else:
+            print("current state: {}".format(self.state))
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.

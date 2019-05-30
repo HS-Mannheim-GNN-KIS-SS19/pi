@@ -1,5 +1,8 @@
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+import constants
+
+if not constants.USE_FAKE_CONTROLLER:
+    from picamera.array import PiRGBArray
+    from picamera import PiCamera
 import time
 
 camera = None

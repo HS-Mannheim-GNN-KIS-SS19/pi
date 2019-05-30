@@ -51,7 +51,7 @@ class IMAGE_PROCESSING:
 class ENV:
     STEP_RANGE = 1
     SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2 + 1
-    ACTION_SPACE = (STEP_RANGE * 2 + 1) ** 3
+    ACTION_SPACE = 1 * 2  # n servo * m directions
     D_REWARD_MULTIPLIER = 10
     R_REWARD_MULTIPLIER = 60
 

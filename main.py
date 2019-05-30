@@ -7,7 +7,7 @@ import sys
 
 def reinstall_env():
     from pip._internal import main as pipmain
-    pipmain(['install', "-e", "./gym_/"])
+    pipmain(['install', '--user', "-e", "./gym_/"])
 
 
 def register_env():

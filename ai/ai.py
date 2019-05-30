@@ -11,7 +11,14 @@ from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
 
-class EezybotDQN():
+# Not sure about this
+class EezybotRL:
+    def __init__(self, train=True, create_new=False):
+        print('building gym...')
+        env = gym.make(AI.ENV_NAME)
+
+
+class EezybotDQN:
     def __init__(self, train=True, create_new=False):
         # Get the environment and extract the number of actions.
         print('building gym...')
@@ -24,12 +31,12 @@ class EezybotDQN():
         # Next, we build a very simple model.
         model = Sequential()
         model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-        model.add(Dense(AI.LAYER_SIZE.FIRST))
+        model.add(Dense(AI.LAYER_SIZE.FIRST // 4))
         model.add(Activation('relu'))
-        model.add(Dense(AI.LAYER_SIZE.SECOND))
+        model.add(Dense(AI.LAYER_SIZE.SECOND // 4))
         model.add(Activation('relu'))
-        model.add(Dense(AI.LAYER_SIZE.THIRD))
-        model.add(Activation('relu'))
+        # model.add(Dense(AI.LAYER_SIZE.THIRD//2))
+        # model.add(Activation('relu'))
         model.add(Dense(nb_actions))
         model.add(Activation('linear'))
         print(model.summary())
