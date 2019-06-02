@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import gym
 from gym import spaces
 
-from constants import COMPLEX_ENV
+from constants import ENV
 from eezybot_controller import eezybot
 from image_processing_interface import get_state
 from reward_calculation import *
@@ -52,9 +52,8 @@ class AbstractEezybotEnv(gym.Env, ABC):
         # Should be 27 actions: 3 servos ^ 3 actions
         self.action_space = spaces.Discrete(self._get_action_space_size())
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
-        self.observation_space = spaces.Box(-1 * COMPLEX_ENV.INPUT_RANGE, 1 * COMPLEX_ENV.INPUT_RANGE, shape=(3,),
-                                            dtype=np.int)
-
+        self.observation_space = spaces.Box(-ENV.INPUT_RANGE, ENV.INPUT_RANGE, shape=(3,),
+                                            dtype=ENV.INPUT_DATA_TYPE)
         self.reward_range = (-float('inf'), float('inf'))
         self.d_reward = None
         self.r_reward = None

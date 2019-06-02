@@ -56,8 +56,10 @@ class REWARD:
 
 
 class ENV:
+    from numpy import int8
     STEP_RANGE = 1
     INPUT_RANGE = 10
+    INPUT_DATA_TYPE = int8
 
 
 class COMPLEX_ENV(ENV):
