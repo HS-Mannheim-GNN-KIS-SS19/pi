@@ -1,8 +1,13 @@
 from constants import SIMPLE_ENV
-from gym_.gym_eezybot.envs import eezybot_env
+from gym_.gym_eezybot.envs.abstract_eezybot_env import AbstractEezybotEnv
 
 
-class SimpleEezybotEnv(eezybot_env.EezybotEnv):
+class SimpleEezybotEnv(AbstractEezybotEnv):
+    """
+        Moves 1 of 3 Servos having 2 possible Actions each (step backwards, step forward) every step
+
+        Actionspace: 3 * 2 = 6
+    """
 
     def _get_action_space_size(self):
         return SIMPLE_ENV.ACTION_SPACE
@@ -19,4 +24,4 @@ class SimpleEezybotEnv(eezybot_env.EezybotEnv):
         return actions
 
     def __init__(self):
-        super().__init__()
+        AbstractEezybotEnv.__init__(self)

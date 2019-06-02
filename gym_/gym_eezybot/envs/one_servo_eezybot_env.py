@@ -1,8 +1,13 @@
 from constants import ONE_SERVO_ENV
-from gym_.gym_eezybot.envs import eezybot_env
+from gym_.gym_eezybot.envs.abstract_eezybot_env import AbstractEezybotEnv
 
 
-class OneServoEezybotEnv(eezybot_env.EezybotEnv):
+class OneServoEezybotEnv(AbstractEezybotEnv):
+    """
+        Moves the Base Servo wich has 2 possible Actions (step backwards, step forward) every step
+
+        Actionspace: 1 * 2 = 2
+    """
 
     def _get_action_space_size(self):
         return ONE_SERVO_ENV.ACTION_SPACE
@@ -15,4 +20,4 @@ class OneServoEezybotEnv(eezybot_env.EezybotEnv):
         return actions
 
     def __init__(self):
-        super().__init__()
+        AbstractEezybotEnv.__init__(self)

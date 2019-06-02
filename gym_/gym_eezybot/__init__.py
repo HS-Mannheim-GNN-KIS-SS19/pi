@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 # delete if it's already registered
-env_name = 'EezybotEnv-v0'
+env_name = 'ComplexEezybotEnv-v0'
 if env_name in gym.envs.registry.env_specs:
     del gym.envs.registry.env_specs[env_name]
 
@@ -21,7 +21,7 @@ if env_name3 in gym.envs.registry.env_specs:
 
 register(
     id=env_name,
-    entry_point='gym_eezybot.envs:eezybot_env',
+    entry_point='gym_eezybot.envs:complex_eezybot_env',
     timestep_limit=1000,
     reward_threshold=1.0,
     nondeterministic=True,

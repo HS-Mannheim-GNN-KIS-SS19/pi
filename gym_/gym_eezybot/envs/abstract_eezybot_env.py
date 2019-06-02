@@ -1,29 +1,27 @@
+from abc import ABC, abstractmethod
+
 import gym
 from gym import spaces
 
-from constants import EEZYBOT_ENV
+from constants import COMPLEX_ENV
 from eezybot_controller import eezybot
 from image_processing_interface import get_state
 from reward_calculation import *
 from servo_controller import OutOfBoundsException
 
 
-class EezybotEnv(gym.Env):
+class AbstractEezybotEnv(gym.Env, ABC):
+    """DO NOT REGISTER AS ENV"""
+
     metadata = {'render.modes': ['human']}
 
+    @abstractmethod
     def _get_action_space_size(self):
-        return EEZYBOT_ENV.ACTION_SPACE
+        pass
 
+    @abstractmethod
     def _map_action_to_angle_offsets_tuple(self):
-        actions = []
-        for base_angle in range(EEZYBOT_ENV.SINGLE_SERVO_ACTION_SPACE):
-            for arm_vertical_angle in range(EEZYBOT_ENV.SINGLE_SERVO_ACTION_SPACE):
-                for arm_horizontal_angle in range(EEZYBOT_ENV.SINGLE_SERVO_ACTION_SPACE):
-                    actions.append(((base_angle - EEZYBOT_ENV.STEP_RANGE) * EEZYBOT_ENV.STEP_SIZE_OF.BASE,
-                                    (arm_vertical_angle - EEZYBOT_ENV.STEP_RANGE) * EEZYBOT_ENV.STEP_SIZE_OF.VERTICAL,
-                                    (
-                                                arm_horizontal_angle - EEZYBOT_ENV.STEP_RANGE) * EEZYBOT_ENV.STEP_SIZE_OF.HORIZONTAL))
-        return actions
+        pass
 
     def __init__(self):
         """The main OpenAI Gym class. It encapsulates an environment with
@@ -54,7 +52,7 @@ class EezybotEnv(gym.Env):
         # Should be 27 actions: 3 servos ^ 3 actions
         self.action_space = spaces.Discrete(self._get_action_space_size())
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
-        self.observation_space = spaces.Box(-1 * EEZYBOT_ENV.INPUT_RANGE, 1 * EEZYBOT_ENV.INPUT_RANGE, shape=(3,),
+        self.observation_space = spaces.Box(-1 * COMPLEX_ENV.INPUT_RANGE, 1 * COMPLEX_ENV.INPUT_RANGE, shape=(3,),
                                             dtype=np.int)
 
         self.reward_range = (-float('inf'), float('inf'))
@@ -66,7 +64,7 @@ class EezybotEnv(gym.Env):
         self.state = None
         self.reset()
 
-    # TODO
+    # TODO add reward for success
     def _is_episode_over(self, new_state, rotation_successful):
         if new_state == (0, 0, 0) or not rotation_successful:
             return True

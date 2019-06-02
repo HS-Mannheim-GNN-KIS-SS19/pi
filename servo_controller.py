@@ -452,7 +452,7 @@ class ServoKeyListener(KeyListener):
         if func_dictionary is None:
             func_dictionary = {}
 
-        self.step_size = SERVO.MANUEL_CONTROL.STEP
+        self.step_size = SERVO.MANUEL_CONTROL.STEP_SIZE
         func_dictionary.update({step_control[0]: (self.step_size_up,), step_control[1]: (self.step_size_down,)})
         for servo_tuple in servo_tuples:
             func_dictionary.update(

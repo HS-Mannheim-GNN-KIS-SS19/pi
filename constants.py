@@ -9,7 +9,7 @@ class SERVO_CONTROLLER:
         TIME = 0.02
 
     class MANUEL_CONTROL:
-        STEP = 5
+        STEP_SIZE = 5
 
 
 class EEZYBOT_CONTROLLER:
@@ -60,7 +60,7 @@ class ENV:
     INPUT_RANGE = 10
 
 
-class EEZYBOT_ENV(ENV):
+class COMPLEX_ENV(ENV):
     SINGLE_SERVO_ACTION_SPACE = ENV.STEP_RANGE * 2 + 1
     ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE ** 3
 
@@ -93,7 +93,7 @@ class SIMPLE_ENV(ENV):
 
 class AI:
     class ENV_TYPE:
-        Standart = "EezybotEnv-v0"
+        Standart = "ComplexEezybotEnv-v0"
         SIMPLE = "SimpleEezybotEnv-v0"
         ONE_SERVO = "OneServoEezybotEnv-v0"
 
