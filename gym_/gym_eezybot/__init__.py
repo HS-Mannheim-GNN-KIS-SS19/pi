@@ -5,7 +5,6 @@ from gym.envs.registration import register
 
 logger = logging.getLogger(__name__)
 
-
 # delete if it's already registered
 env_name = 'ComplexEezybotEnv-v0'
 if env_name in gym.envs.registry.env_specs:
@@ -21,7 +20,7 @@ if env_name3 in gym.envs.registry.env_specs:
 
 register(
     id=env_name,
-    entry_point='gym_eezybot.envs:complex_eezybot_env',
+    entry_point='gym_eezybot.envs:ComplexEezybotEnv',
     timestep_limit=1000,
     reward_threshold=1.0,
     nondeterministic=True,
@@ -29,7 +28,7 @@ register(
 
 register(
     id=env_name2,
-    entry_point='gym_eezybot.envs:one_servo_eezybot_env',
+    entry_point='gym_eezybot.envs:OneServoEezybotEnv',
     timestep_limit=1000,
     reward_threshold=1.0,
     nondeterministic=True,
@@ -37,7 +36,7 @@ register(
 
 register(
     id=env_name3,
-    entry_point='gym_eezybot.envs:simple_eezybot_env',
+    entry_point='gym_eezybot.envs:SimpleEezybotEnv',
     timestep_limit=1000,
     reward_threshold=1.0,
     nondeterministic=True,
