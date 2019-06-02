@@ -1,7 +1,7 @@
 import gym
 from gym import spaces
 
-from constants import ENV
+from constants import EEZYBOT_ENV
 from eezybot_controller import eezybot
 from image_processing_interface import get_state
 from reward_calculation import *
@@ -12,16 +12,17 @@ class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def _get_action_space_size(self):
-        return ENV.ACTION_SPACE
+        return EEZYBOT_ENV.ACTION_SPACE
 
     def _map_action_to_angle_offsets_tuple(self):
         actions = []
-        for base_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-            for arm_vertical_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-                for arm_horizontal_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-                    actions.append(((base_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.BASE,
-                                    (arm_vertical_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.VERTICAL,
-                                    (arm_horizontal_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.HORIZONTAL))
+        for base_angle in range(EEZYBOT_ENV.SINGLE_SERVO_ACTION_SPACE):
+            for arm_vertical_angle in range(EEZYBOT_ENV.SINGLE_SERVO_ACTION_SPACE):
+                for arm_horizontal_angle in range(EEZYBOT_ENV.SINGLE_SERVO_ACTION_SPACE):
+                    actions.append(((base_angle - EEZYBOT_ENV.STEP_RANGE) * EEZYBOT_ENV.STEP_SIZE_OF.BASE,
+                                    (arm_vertical_angle - EEZYBOT_ENV.STEP_RANGE) * EEZYBOT_ENV.STEP_SIZE_OF.VERTICAL,
+                                    (
+                                                arm_horizontal_angle - EEZYBOT_ENV.STEP_RANGE) * EEZYBOT_ENV.STEP_SIZE_OF.HORIZONTAL))
         return actions
 
     def __init__(self):
@@ -53,7 +54,7 @@ class EezybotEnv(gym.Env):
         # Should be 27 actions: 3 servos ^ 3 actions
         self.action_space = spaces.Discrete(self._get_action_space_size())
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
-        self.observation_space = spaces.Box(-1 * ENV.INPUT_RANGE, 1 * ENV.INPUT_RANGE, shape=(3,),
+        self.observation_space = spaces.Box(-1 * EEZYBOT_ENV.INPUT_RANGE, 1 * EEZYBOT_ENV.INPUT_RANGE, shape=(3,),
                                             dtype=np.int)
 
         self.reward_range = (-float('inf'), float('inf'))

@@ -56,9 +56,14 @@ class REWARD:
 
 class ENV:
     STEP_RANGE = 1
+    INPUT_RANGE = 10
+
+
+class EEZYBOT_ENV:
+    STEP_RANGE = ENV.STEP_RANGE
     SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2 + 1
     ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE ** 3
-    INPUT_RANGE = 10
+    INPUT_RANGE = ENV.INPUT_RANGE
 
     class STEP_SIZE_OF:
         BASE = 5
@@ -67,18 +72,20 @@ class ENV:
 
 
 class ONE_SERVO_ENV:
-    STEP_RANGE = 1
+    STEP_RANGE = ENV.STEP_RANGE
     SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2
     ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE
+    INPUT_RANGE = ENV.INPUT_RANGE
 
     class STEP_SIZE_OF:
         BASE = 5
 
 
 class SIMPLE_ENV:
-    STEP_RANGE = 1
+    STEP_RANGE = ENV.STEP_RANGE
     SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2
     ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE * 3
+    INPUT_RANGE = ENV.INPUT_RANGE
 
     class STEP_SIZE_OF:
         BASE = 5
@@ -87,12 +94,17 @@ class SIMPLE_ENV:
 
 
 class AI:
-    ENV_NAME = 'EezybotEnv-v0'
+    class ENV_TYPE:
+        Standart = "eezybot_env"
+        SIMPLE = "simple_eezybot_env"
+        ONE_SERVO = "one_servo_eezybot_env"
+
+    ENV_NAME = ENV_TYPE.ONE_SERVO
     FILEPATH = 'dqn_{}_weights.h5f'.format(ENV_NAME)
     STEPS = 100
     LEARN_RATE = 0.001
 
     class LAYER_SIZE:
-        FIRST = 64
-        SECOND = 64
-        THIRD = 64
+        FIRST = 8
+        SECOND = 8
+        THIRD = 8
