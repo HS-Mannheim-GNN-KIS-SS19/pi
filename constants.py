@@ -95,9 +95,9 @@ class SIMPLE_ENV:
 
 class AI:
     class ENV_TYPE:
-        Standart = "eezybot_env"
-        SIMPLE = "simple_eezybot_env"
-        ONE_SERVO = "one_servo_eezybot_env"
+        Standart = "EezybotEnv-v0"
+        SIMPLE = "SimpleEezybotEnv-v0"
+        ONE_SERVO = "OneServoEezybotEnv-v0"
 
     ENV_NAME = ENV_TYPE.ONE_SERVO
     FILEPATH = 'dqn_{}_weights.h5f'.format(ENV_NAME)
