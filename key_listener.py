@@ -6,23 +6,23 @@ import time
 class KeyListener:
 
     @staticmethod
-    def true_func():
+    def always_true():
         return True
 
-    def __init__(self, dictionary, until=True, until_func=true_func):
+    def __init__(self, dictionary, while_func=always_true):
         """
 
             calls given function when corresponding key is entered on console
 
-        :param dictionary: a python dictionary containing Tuples with a function and args as values
-                    {"key":(func, arg1, arg2...),
-                    "key2":(func2, arg1, arg2...)}
-        :param until: boolean flag stopping the  key checking Thread if True
-        :param until_func: function returning a boolean, stopping the  key checking Thread if True
+        :param dictionary:  a python dictionary containing Tuples with a function and args as values
+                            Bsp:    {"key":(func, arg1, arg2...),
+                                    "key2":(func2, arg1, arg2...)}
+        :param while_func:  function returning a boolean, stopping the  key checking Thread if True
+                            default function returns always True
         """
 
         def _check_key():
-            while until and until_func():
+            while while_func():
                 input_key = sys.stdin.read(1)
 
                 for key, funcTuple in dictionary.items():

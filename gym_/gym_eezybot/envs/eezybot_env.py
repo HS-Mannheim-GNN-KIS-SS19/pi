@@ -1,66 +1,38 @@
-import cv2
 import gym
-import numpy as np
 from gym import spaces
 
-import raspi_camera
 from constants import ENV
 from eezybot_controller import eezybot
-from image_processing_interface import *
+from image_processing_interface import get_state
+from reward_calculation import *
 from servo_controller import OutOfBoundsException
-
-
-def get_current_state() -> (float, float, float):
-    state = get_state()
-    return state if state is not None else (0, 0, 0)
-
-
-def vector_length(vector):
-    return np.math.sqrt(sum(i ** 2 for i in vector))
-
-
-def distance_reward(old_state, new_state):
-    return vector_length(new_state) - vector_length(old_state)
-
-
-def radius_reward(old_r, new_r):
-    return new_r - old_r
-
-
-def _map_action_to_action_tuple():
-    actions = []
-    for base_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-        for arm_vertical_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-            for arm_horizontal_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
-                actions.append(((base_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.BASE,
-                                (arm_vertical_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.VERTICAL,
-                                (arm_horizontal_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.HORIZONTAL))
-    return actions
-
-
-def resolve_reward(old_state, new_state, rotation_successful):
-    if new_state == (0, 0, 0) or not rotation_successful:
-        return -10
-    d_reward = distance_reward(old_state[0:2], new_state[0:2])
-    r_reward = radius_reward(old_state[2], new_state[2])
-    reward = d_reward * ENV.D_REWARD_MULTIPLIER + r_reward * ENV.R_REWARD_MULTIPLIER
-    print("{} = d_reward: {} + r_reward: {}".format(reward, d_reward * ENV.D_REWARD_MULTIPLIER,
-                                                    r_reward * ENV.R_REWARD_MULTIPLIER))
-    return reward
 
 
 class EezybotEnv(gym.Env):
     metadata = {'render.modes': ['human']}
+
+    def _get_action_space_size(self):
+        return ENV.ACTION_SPACE
+
+    def _map_action_to_angle_offsets_tuple(self):
+        actions = []
+        for base_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
+            for arm_vertical_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
+                for arm_horizontal_angle in range(ENV.SINGLE_SERVO_ACTION_SPACE):
+                    actions.append(((base_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.BASE,
+                                    (arm_vertical_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.VERTICAL,
+                                    (arm_horizontal_angle - ENV.STEP_RANGE) * ENV.STEP_SIZE_OF.HORIZONTAL))
+        return actions
 
     def __init__(self):
         """The main OpenAI Gym class. It encapsulates an environment with
          arbitrary behind-the-scenes dynamics. An environment can be
          partially or fully observed.
          The main API methods that users of this class need to know are:
-             step
-             reset
-             render
-             close
+             step,
+             reset,
+             render,
+             close,
              seed
 
          And set the following attributes:
@@ -74,23 +46,23 @@ class EezybotEnv(gym.Env):
          non-underscored versions are wrapper methods to which we may add
          functionality over time.
          """
-        # image can only be None if we pipe through stdout
-        self.image = None
-
-        # Coordinate min/maxs
         # TODO: Usage?
         self.min_distance_to_eezybot = 0
         self.max_distance_to_eezybot = float('inf')
 
         # Should be 27 actions: 3 servos ^ 3 actions
-        self.action_space = spaces.Discrete(ENV.ACTION_SPACE)
+        self.action_space = spaces.Discrete(self._get_action_space_size())
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
-        self.observation_space = spaces.Box(-1.0, 1.0, shape=(3,),
-                                            dtype=np.float32)
+        self.observation_space = spaces.Box(-1 * ENV.INPUT_RANGE, 1 * ENV.INPUT_RANGE, shape=(3,),
+                                            dtype=np.int)
 
         self.reward_range = (-float('inf'), float('inf'))
+        self.d_reward = None
+        self.r_reward = None
+        self.reward = None
 
-        self.actions_tuple = _map_action_to_action_tuple()
+        self.actions_tuple = self._map_action_to_angle_offsets_tuple()
+        self.state = None
         self.reset()
 
     # TODO
@@ -103,17 +75,20 @@ class EezybotEnv(gym.Env):
         base_angle, arm_vertical_angle, arm_horizontal_angle = self.actions_tuple[action]
         rotation_successful = True
         try:
-            eezybot.base.step(base_angle)
+            if base_angle != 0:
+                eezybot.base.step(base_angle)
         except OutOfBoundsException as e:
             print(e)
             rotation_successful = False
         try:
-            eezybot.verticalArm.step(arm_vertical_angle)
+            if arm_vertical_angle != 0:
+                eezybot.verticalArm.step(arm_vertical_angle)
         except OutOfBoundsException as e:
             print(e)
             rotation_successful = False
         try:
-            eezybot.horizontalArm.step(arm_horizontal_angle)
+            if arm_horizontal_angle != 0:
+                eezybot.horizontalArm.step(arm_horizontal_angle)
         except OutOfBoundsException as e:
             print(e)
             rotation_successful = False
@@ -137,11 +112,11 @@ class EezybotEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
         rotation_successful = self._take_action(action)
         old_state = self.state
-        eezybot.wait_for_shutdown()
-        self.state = get_current_state()
-        reward = resolve_reward(old_state, self.state, rotation_successful)
+        eezybot.join()
+        self.state = get_state()
+        self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         episode_over = self._is_episode_over(self.state, rotation_successful)
-        return self.state, reward, episode_over, {}
+        return self.state, self.reward, episode_over, {}
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
@@ -149,8 +124,8 @@ class EezybotEnv(gym.Env):
              observation (object): the initial observation.
          """
 
-        eezybot.start().to_default_and_shutdown().wait_for_shutdown()
-        self.state = get_current_state()
+        eezybot.start().to_default_and_shutdown().join()
+        self.state = get_state()
         return self.state
 
     def render(self, mode='human', close=False):
@@ -173,18 +148,17 @@ class EezybotEnv(gym.Env):
         Args:
             mode (str): the mode to render with
         """
-        if self.image is not None:
-            cv2.imshow('live view', self.image)
-            cv2.waitKey(1)
-        # else:
-        #     print("current state: {}".format(self.state))
+
+        print("current state: {}".format(self.state))
+        print("{} = d_reward: {} + r_reward: {}".format(self.reward, self.d_reward * REWARD.DISTANCE_MULTIPLIER,
+                                                        self.r_reward * REWARD.RADIUS_MULTIPLIER))
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        eezybot.start().to_default_and_shutdown(interrupt=True).wait_for_shutdown()
+        eezybot.start().to_default_and_shutdown(dump_rotations=True).join()
 
     def seed(self, seed=None):
         """Sets the seed for this env's random number generator(s).

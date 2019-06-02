@@ -1,3 +1,4 @@
+from constants import ENV
 from image_processing import detect
 
 
@@ -6,7 +7,7 @@ def get_state():
     marbles = map["marbles"]
 
     if marbles is None or len(marbles) == 0:
-        return None
+        return tuple([0, 0, 0])
 
     biggest = marbles[0]
     for i in range(len(marbles)):
@@ -14,7 +15,7 @@ def get_state():
             biggest = marbles[i]
 
     scale = 2.0 / map["shape"][0]
-    return tuple([x * scale + 1.0 for x in biggest])
+    return tuple([int(round(x * ENV.INPUT_RANGE * scale + 1.0)) for x in biggest])
 
 
 if __name__ == '__main__':

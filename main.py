@@ -1,8 +1,10 @@
-from eezybot_controller import eezybot
-import ai_interface
+import sys
+
 import gym
 from gym.envs.registration import register
-import sys
+
+import ai_interface
+from eezybot_controller import eezybot
 
 
 def reinstall_env():
@@ -44,6 +46,6 @@ if __name__ == '__main__':
 
     while True:
         ai_interface.go_to_marble(train, new)
-        eezybot.clutch.start().grab().shutdown().join()
+        eezybot.clutch.start().grab().finish_and_shutdown().join()
         ai_interface.go_to_destination()
-        eezybot.clutch.start().release().shutdown().join()
+        eezybot.clutch.start().release().finish_and_shutdown().join()

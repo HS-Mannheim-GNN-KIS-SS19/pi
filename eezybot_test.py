@@ -1,6 +1,7 @@
 from time import sleep
-from eezybot_controller import eezybot
+
 from constants import *
+from eezybot_controller import eezybot
 
 
 def servo_test_max():
@@ -28,6 +29,6 @@ def testBoth():
 
 
 eezybot.start().print_performed_rotations(True).activate_key_listener()
-# testBoth()
+testBoth()
 print("ready")
 sleep(10000)

@@ -1,12 +1,6 @@
 import numpy as np
 
-from constants import ENV
-from image_processing_interface import get_state
-
-
-def get_current_state() -> (float, float, float):
-    state = get_state()
-    return state if state is not None else (0, 0, 0)
+from constants import REWARD
 
 
 def vector_length(vector):
@@ -21,11 +15,10 @@ def radius_reward(old_r, new_r):
     return new_r - old_r
 
 
-def resolve_rewards(old_state, new_state):
-    if new_state == (0, 0, 0):
-        return -10
+def resolve_rewards(old_state, new_state, rotation_successful):
+    if new_state == (0, 0, 0) or not rotation_successful:
+        return REWARD.FOR_FAILING
     d_reward = distance_reward(old_state[0:2], new_state[0:2])
     r_reward = radius_reward(old_state[2], new_state[2])
-    reward = d_reward * ENV.D_REWARD_MULTIPLIER + r_reward * ENV.R_REWARD_MULTIPLIER
-    return "Reward: {}, Distance Reward: {}, Radius Reward: {}".format(reward, d_reward * ENV.D_REWARD_MULTIPLIER,
-                                                                       r_reward * ENV.R_REWARD_MULTIPLIER)
+    reward = d_reward * REWARD.DISTANCE_MULTIPLIER + r_reward * REWARD.RADIUS_MULTIPLIER
+    return reward, d_reward, r_reward
