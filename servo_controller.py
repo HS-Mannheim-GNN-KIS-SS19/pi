@@ -84,7 +84,7 @@ class Servo:
 
         # Components
         self.__channel_number = channel_number
-        if self.name is None:
+        if name is None:
             self.name = "Servo {}".format(channel_number)
         else:
             self.name = name

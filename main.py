@@ -7,11 +7,6 @@ import ai_interface
 from eezybot_controller import eezybot
 
 
-def reinstall_env():
-    from pip._internal import main as pipmain
-    pipmain(['install', "-e", "./gym_/"])
-
-
 def register_env():
     # delete if it's already registered
     env_name = 'ComplexEezybotEnv-v0'
@@ -56,9 +51,7 @@ if __name__ == '__main__':
     new = False
     # -r arg to reinstall the gym env
     for i in range(len(sys.argv) - 1):
-        if sys.argv[i + 1] == '-reset' or sys.argv[i + 1] == '-r':
-            reinstall_env()
-        elif sys.argv[i + 1] == '-train' or sys.argv[i + 1] == '-t':
+        if sys.argv[i + 1] == '-train' or sys.argv[i + 1] == '-t':
             train = True
         elif sys.argv[i + 1] == '-new' or sys.argv[i + 1] == '-n':
             new = True
