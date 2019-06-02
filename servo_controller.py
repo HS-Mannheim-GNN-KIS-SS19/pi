@@ -5,10 +5,10 @@ import threading
 import time
 from typing import Tuple
 
-from constants import STEP, USE_FAKE_CONTROLLER, MANUEL_CONTROL
+from constants import SERVO_CONTROLLER as SERVO
 from key_listener import KeyListener
 
-if not USE_FAKE_CONTROLLER:
+if not SERVO.USE_FAKE_CONTROLLER:
     import adafruit_servokit
 else:
     # Dummy Class for Testing
@@ -273,23 +273,23 @@ class Servo:
 
         def perform_rotation_step_to(degree):
             _kit.servo[self.__channel_number].angle = degree
-            time.sleep(STEP.TIME)
+            time.sleep(SERVO.STEP.TIME)
 
         cur_angle = ensure_in_bounds(_kit.servo[self.__channel_number].angle)
         delta = angle - cur_angle
 
         # divide delta in steps which will be added on the current angle until the destined angle is reached
-        for _ in range(int(abs(delta) / STEP.SIZE)):
+        for _ in range(int(abs(delta) / SERVO.STEP.SIZE)):
             if delta < 0:
-                cur_angle -= STEP.SIZE
+                cur_angle -= SERVO.STEP.SIZE
             else:
-                cur_angle += STEP.SIZE
+                cur_angle += SERVO.STEP.SIZE
             if self.__dump_rotations:
                 return
             perform_rotation_step_to(cur_angle)
         if self.__dump_rotations:
             return
-        if delta % STEP.SIZE != 0:
+        if delta % SERVO.STEP.SIZE != 0:
             perform_rotation_step_to(cur_angle)
         if self.__print_rotations:
             print("servo {} performed movement to: {}".format(self.name,
@@ -452,7 +452,7 @@ class ServoKeyListener(KeyListener):
         if func_dictionary is None:
             func_dictionary = {}
 
-        self.step_size = MANUEL_CONTROL.STEP
+        self.step_size = SERVO.MANUEL_CONTROL.STEP
         func_dictionary.update({step_control[0]: (self.step_size_up,), step_control[1]: (self.step_size_down,)})
         for servo_tuple in servo_tuples:
             func_dictionary.update(

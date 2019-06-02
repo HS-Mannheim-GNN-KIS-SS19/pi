@@ -1,50 +1,52 @@
-import constants as cons
+from constants import EEZYBOT_CONTROLLER as EEZYBOT
 from image_processing_interface import get_state
 from key_listener import KeyListener
 from servo_controller import ServoController, Servo, ServoKeyListener
 
-if cons.MANUEL_CONTROL.RESOLVE_REWARDS:
+if EEZYBOT.MANUEL_CONTROL.RESOLVE_REWARDS:
     import reward_calculation
 
 
 class _Base(Servo):
 
     def __init__(self):
-        super().__init__(cons.BASE.CHANNEL, cons.BASE.MIN, cons.BASE.DEFAULT, cons.BASE.MAX, name="Base")
+        super().__init__(EEZYBOT.BASE.CHANNEL, EEZYBOT.BASE.MIN, EEZYBOT.BASE.DEFAULT, EEZYBOT.BASE.MAX, name="Base")
 
 
 class _ArmVertical(Servo):
 
     def __init__(self):
-        super().__init__(cons.VERTICAL.CHANNEL, cons.VERTICAL.MIN, cons.VERTICAL.DEFAULT, cons.VERTICAL.MAX,
+        super().__init__(EEZYBOT.VERTICAL.CHANNEL, EEZYBOT.VERTICAL.MIN, EEZYBOT.VERTICAL.DEFAULT, EEZYBOT.VERTICAL.MAX,
                          name="Vertical Arm")
 
 
 class _ArmHorizontal(Servo):
 
     def __init__(self):
-        super().__init__(cons.HORIZONTAL.CHANNEL, cons.HORIZONTAL.MIN, cons.HORIZONTAL.DEFAULT, cons.HORIZONTAL.MAX,
+        super().__init__(EEZYBOT.HORIZONTAL.CHANNEL, EEZYBOT.HORIZONTAL.MIN, EEZYBOT.HORIZONTAL.DEFAULT,
+                         EEZYBOT.HORIZONTAL.MAX,
                          name="Horizontal Arm")
 
 
 class _Clutch(Servo):
 
     def __init__(self):
-        super().__init__(cons.CLUTCH.CHANNEL, cons.CLUTCH.MIN, cons.CLUTCH.DEFAULT, cons.CLUTCH.MAX, name="Clutch")
+        super().__init__(EEZYBOT.CLUTCH.CHANNEL, EEZYBOT.CLUTCH.MIN, EEZYBOT.CLUTCH.DEFAULT, EEZYBOT.CLUTCH.MAX,
+                         name="Clutch")
 
     def grab(self):
-        return self.rotate(cons.CLUTCH.GRAB)
+        return self.rotate(EEZYBOT.CLUTCH.GRAB)
 
     def release(self):
-        return self.rotate(cons.CLUTCH.RELEASE)
+        return self.rotate(EEZYBOT.CLUTCH.RELEASE)
 
 
 class _EezybotKeyListener(ServoKeyListener):
-    if cons.MANUEL_CONTROL.RESOLVE_REWARDS:
+    if EEZYBOT.MANUEL_CONTROL.RESOLVE_REWARDS:
         def print_rewards(self):
             old_state = self.state
             self.state = get_state()
-            print(reward_calculation.resolve_rewards(old_state, self.state))
+            print(reward_calculation.resolve_rewards(old_state, self.state, True))
 
         def step_up(self, servo):
             super().step_up(servo)
@@ -79,7 +81,7 @@ class _EezybotKeyListener(ServoKeyListener):
         if func_dictionary is None:
             func_dictionary = {}
 
-        if cons.MANUEL_CONTROL.RESOLVE_REWARDS:
+        if EEZYBOT.MANUEL_CONTROL.RESOLVE_REWARDS:
             self.state = get_state()
         super().__init__(*servo_tuples, step_control=step_control, func_dictionary=func_dictionary,
                          while_func=while_func)
@@ -101,9 +103,9 @@ class _EezybotServoController(ServoController):
             if dump_rotations is True, it won't wait for all queued rotations to be performed and
             instead cancels all currently performed rotations and clears the queues
         """
-        return self.finish_and_shutdown(cons.BASE.DEFAULT, cons.VERTICAL.DEFAULT,
-                                        cons.HORIZONTAL.DEFAULT,
-                                        cons.CLUTCH.DEFAULT, dump_rotations=dump_rotations)
+        return self.finish_and_shutdown(EEZYBOT.BASE.DEFAULT, EEZYBOT.VERTICAL.DEFAULT,
+                                        EEZYBOT.HORIZONTAL.DEFAULT,
+                                        EEZYBOT.CLUTCH.DEFAULT, dump_rotations=dump_rotations)
 
     def finish_and_shutdown(self, base_angle=None, arm_vertical_angle=None, arm_horizontal_angle=None,
                             clutch_angle=None, dump_rotations=False):

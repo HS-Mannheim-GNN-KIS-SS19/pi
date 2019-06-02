@@ -1,51 +1,49 @@
-USE_FAKE_CONTROLLER = False
+"""----------------------------------------CONTROLLER--------------------------------------------"""
 
 
-# TODO min, max werte auf -1 bis 1 umstellen oder so
-# makes no sense since obviously 0 is min and 1 is max.
-# Another constant for default giving the relative value (between 0 and 1) would make sense.
-class STEP:
-    SIZE = 1
-    TIME = 0.02
+class SERVO_CONTROLLER:
+    USE_FAKE_CONTROLLER = False
+
+    class STEP:
+        SIZE = 1
+        TIME = 0.02
+
+    class MANUEL_CONTROL:
+        STEP = 5
 
 
-class BASE:
-    CHANNEL = 0
-    MIN = 0
-    DEFAULT = 90
-    MAX = 180
+class EEZYBOT_CONTROLLER:
+    class BASE:
+        CHANNEL = 0
+        MIN = 0
+        DEFAULT = 90
+        MAX = 180
+
+    class HORIZONTAL:
+        CHANNEL = 1
+        MIN = 0
+        DEFAULT = 0
+        MAX = 125
+
+    class VERTICAL:
+        CHANNEL = 2
+        MIN = 0
+        DEFAULT = 180
+        MAX = 180
+
+    class CLUTCH:
+        CHANNEL = 3
+        MIN = 0
+        DEFAULT = 60
+        MAX = 180
+        GRAB = 35
+        RELEASE = DEFAULT
+
+    class MANUEL_CONTROL:
+        RESOLVE_REWARDS = False
 
 
-class HORIZONTAL:
-    CHANNEL = 1
-    MIN = 0
-    DEFAULT = 0
-    MAX = 125
-
-
-class VERTICAL:
-    CHANNEL = 2
-    MIN = 0
-    DEFAULT = 180
-    MAX = 180
-
-
-class CLUTCH:
-    CHANNEL = 3
-    MIN = 0
-    DEFAULT = 60
-    MAX = 180
-    GRAB = 35
-    RELEASE = DEFAULT
-
-
-class MANUEL_CONTROL:
-    STEP = 5
-    RESOLVE_REWARDS = False
-
-
-class IMAGE_PROCESSING:
-    USE_PYTHON_2 = False
+"""----------------------------------------REWARD--------------------------------------------"""
 
 
 class REWARD:
@@ -54,16 +52,17 @@ class REWARD:
     FOR_FAILING = -10
 
 
+"""----------------------------------------ENV--------------------------------------------"""
+
+
 class ENV:
     STEP_RANGE = 1
     INPUT_RANGE = 10
 
 
-class EEZYBOT_ENV:
-    STEP_RANGE = ENV.STEP_RANGE
-    SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2 + 1
+class EEZYBOT_ENV(ENV):
+    SINGLE_SERVO_ACTION_SPACE = ENV.STEP_RANGE * 2 + 1
     ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE ** 3
-    INPUT_RANGE = ENV.INPUT_RANGE
 
     class STEP_SIZE_OF:
         BASE = 5
@@ -71,26 +70,25 @@ class EEZYBOT_ENV:
         HORIZONTAL = 10
 
 
-class ONE_SERVO_ENV:
-    STEP_RANGE = ENV.STEP_RANGE
-    SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2
+class ONE_SERVO_ENV(ENV):
+    SINGLE_SERVO_ACTION_SPACE = ENV.STEP_RANGE * 2
     ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE
-    INPUT_RANGE = ENV.INPUT_RANGE
 
     class STEP_SIZE_OF:
         BASE = 5
 
 
-class SIMPLE_ENV:
-    STEP_RANGE = ENV.STEP_RANGE
-    SINGLE_SERVO_ACTION_SPACE = STEP_RANGE * 2
+class SIMPLE_ENV(ENV):
+    SINGLE_SERVO_ACTION_SPACE = ENV.STEP_RANGE * 2
     ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE * 3
-    INPUT_RANGE = ENV.INPUT_RANGE
 
     class STEP_SIZE_OF:
         BASE = 5
         VERTICAL = 10
         HORIZONTAL = 10
+
+
+"""----------------------------------------AI--------------------------------------------"""
 
 
 class AI:
