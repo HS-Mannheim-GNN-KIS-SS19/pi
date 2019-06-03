@@ -23,9 +23,9 @@ class EezybotDQN:
         model = Sequential()
         model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
         # noinspection PyUnresolvedReferences
-        for i in range(AI.PROPERTIES.HIDDEN_LAYER_AMOUNT):
+        for layer_size in AI.PROPERTIES.LAYER_SIZES:
             # noinspection PyUnresolvedReferences
-            model.add(Dense(AI.PROPERTIES.LAYERSIZES[i]))
+            model.add(Dense(layer_size))
         model.add(Activation('relu'))
         model.add(Dense(nb_actions))
         model.add(Activation('linear'))

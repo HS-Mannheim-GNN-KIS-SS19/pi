@@ -118,7 +118,6 @@ class AI:
             PATH = NotImplemented  # type: str
             STEPS = NotImplemented  # type: int
             LEARN_RATE = NotImplemented  # type: float
-            HIDDEN_LAYER_AMOUNT = NotImplemented  # type: int
             LAYER_SIZES = NotImplemented  # type: [int] # lenght: HIDDEN_LAYER_AMOUNT
 
         class _SHARED(_I_AI_PROPERTIES, ABC):
@@ -134,7 +133,6 @@ class AI:
             """
             STEPS = 100
             LEARN_RATE = 0.001
-            HIDDEN_LAYER_AMOUNT = 3
 
         class BY_ENV:
             class Complex(_SHARED):
