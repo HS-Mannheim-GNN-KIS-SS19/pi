@@ -60,7 +60,7 @@ class REWARD:
 
 class _I_ENV_PROPERTIES(ABC):
     """
-        These Properties must be implemented in any Env Properties
+        These Properties must be implemented in any Env Properties Class
 
         :not implemented: STEP_RANGE
         :not implemented: INPUT_GRID_RADIUS
@@ -75,8 +75,8 @@ class _I_ENV_PROPERTIES(ABC):
 class _SHARED(_I_ENV_PROPERTIES, ABC):
     """
         These Properties are shared among different Env's.
-        Env's inheriting from this Class may override specific Properties
-        Env's inheriting from this Class must override ACTION_SPACE_SIZE
+        Env Properties inheriting from this Class may override specific Properties
+        Env Properties inheriting from this Class must override ACTION_SPACE_SIZE
 
         :not implemented: ACTION_SPACE_SIZE
     """
@@ -109,17 +109,48 @@ class SIMPLE_ENV(_SHARED):
 
 
 class AI:
-    class ENV_TYPE:
-        Standart = "ComplexEezybotEnv-v0"
-        SIMPLE = "SimpleEezybotEnv-v0"
-        ONE_SERVO = "OneServoEezybotEnv-v0"
+    class _AI_TYPES:
+        class _I_AI_PROPERTIES(ABC):
+            """
+                These Properties must be implemented in any AI Properties Class
+            """
+            NAME = NotImplemented  # type: str
+            PATH = NotImplemented  # type: str
+            STEPS = NotImplemented  # type: int
+            LEARN_RATE = NotImplemented  # type: float
+            HIDDEN_LAYER_AMOUNT = NotImplemented  # type: int
+            LAYER_SIZES = NotImplemented  # type: [int] # lenght: HIDDEN_LAYER_AMOUNT
 
-    ENV_NAME = ENV_TYPE.ONE_SERVO
-    FILEPATH = 'dqn_{}_weights.h5f'.format(ENV_NAME)
-    STEPS = 100
-    LEARN_RATE = 0.001
+        class _SHARED(_I_AI_PROPERTIES, ABC):
+            """
+                These Properties are shared among different AI's.
+                AI Properties inheriting from this Class may override specific Properties
+                AI Properties inheriting from this Class must override NAME, PATH, LAYERSIZES
 
-    class LAYER_SIZE:
-        FIRST = 8
-        SECOND = 8
-        THIRD = 8
+
+                :not implemented: NAME
+                :not implemented: PATH
+                :not implemented: LAYERSIZES
+            """
+            STEPS = 100
+            LEARN_RATE = 0.001
+            HIDDEN_LAYER_AMOUNT = 3
+
+        class BY_ENV:
+            class Complex(_SHARED):
+                NAME = "ComplexEezybotEnv-v0"
+                PATH = 'dqn_{}_weights.h5f'.format(NAME)
+                LAYER_SIZES = [16, 16, 16]
+
+            class SIMPLE(_SHARED):
+                NAME = "SimpleEezybotEnv-v0"
+                PATH = 'dqn_{}_weights.h5f'.format(NAME)
+                LAYER_SIZES = [16, 16, 16]
+
+            class ONE_SERVO(_SHARED):
+                NAME = "OneServoEezybotEnv-v0"
+                PATH = 'dqn_{}_weights.h5f'.format(NAME)
+                LAYER_SIZES = [8, 8, 8]
+
+    # noinspection PyProtectedMember
+    PROPERTIES = _AI_TYPES.BY_ENV.ONE_SERVO  # type: _AI_TYPES._I_AI_PROPERTIES
