@@ -12,6 +12,7 @@ if not SERVO.USE_FAKE_CONTROLLER:
     import adafruit_servokit
 else:
     # Dummy Class for Testing
+    # noinspection PyPep8Naming
     class adafruit_servokit:
         class ServoValue:
             def __init__(self):
@@ -19,6 +20,7 @@ else:
 
         servo = [ServoValue(), ServoValue(), ServoValue(), ServoValue()]
 
+        # noinspection PyUnusedLocal
         @staticmethod
         def ServoKit(channels=8):
             return adafruit_servokit
@@ -71,10 +73,12 @@ class Servo:
     def __init__(self, channel_number, min_degree, max_degree, default_degree, name=None):
 
         # IGNORE ERROR: imports depending on Python version
-        IS_PI2 = sys.version_info < (3, 0)
-        if IS_PI2:
+        is_pi2 = sys.version_info < (3, 0)
+        if is_pi2:
+            # noinspection PyUnresolvedReferences
             from Queue import Queue
         else:
+            # noinspection PyUnresolvedReferences
             from queue import Queue
 
         # Bounds
@@ -128,7 +132,7 @@ class Servo:
             then waits for all rotations to be performed
             finally sets flag to shutdown the Rotation Control Thread
 
-        :param final_rotation: if an value is given to final_rotation the last rotation before shutting down will be of this angle
+        :param final_rotation: the last rotation before shutting down will be of this angle
         :param dump_rotations: if True, currently performed rotation as well as all queued rotations will be canceled.
 
         :raises NotStartedException
@@ -321,6 +325,7 @@ class Servo:
 class ServoController:
 
     def __init__(self, *servos):
+        # noinspection PyTypeChecker
         self.servos = servos  # type: Tuple[Servo]
 
     def start(self):
@@ -406,11 +411,11 @@ class ServoController:
 
 class ServoKeyListener(KeyListener):
     @staticmethod
-    def bounds_check(angle, min, max):
-        if angle < min:
-            return min
-        elif angle > max:
-            return max
+    def bounds_check(angle, min_degree, max_degree):
+        if angle < min_degree:
+            return min_degree
+        elif angle > max_degree:
+            return max_degree
         return angle
 
     def step_up(self, servo):

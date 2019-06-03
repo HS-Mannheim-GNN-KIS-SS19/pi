@@ -1,4 +1,7 @@
 """----------------------------------------CONTROLLER--------------------------------------------"""
+from abc import ABC
+
+import numpy
 
 
 class SERVO_CONTROLLER:
@@ -55,16 +58,31 @@ class REWARD:
 """----------------------------------------ENV--------------------------------------------"""
 
 
-class ENV:
-    from numpy import int8
+class _I_ENV_PROPERTIES(ABC):
+    """
+        These Properties must be implemented in any Env Properties
+
+        :not implemented: STEP_RANGE
+        :not implemented: INPUT_GRID_RADIUS
+        :not implemented: ACTION_SPACE_SIZE
+
+    """
+    INPUT_DATA_TYPE = NotImplemented  # type: numpy.int8 or numpy.int16 or numpy.int32 or numpy.float32 or numpy.float64
+    INPUT_GRID_RADIUS = NotImplemented  # type: int
+    ACTION_SPACE_SIZE = NotImplemented  # type: int
+
+
+class _SHARED(_I_ENV_PROPERTIES, ABC):
+    """
+        These Properties are shared among different Env's.
+        Env's inheriting from this Class may override specific Properties
+        Env's inheriting from this Class must override ACTION_SPACE_SIZE
+
+        :not implemented: ACTION_SPACE_SIZE
+    """
     STEP_RANGE = 1
-    INPUT_DATA_TYPE = int8
-    INPUT_RANGE = INPUT_DATA_TYPE(10)
-
-
-class COMPLEX_ENV(ENV):
-    SINGLE_SERVO_ACTION_SPACE = ENV.STEP_RANGE * 2 + 1
-    ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE ** 3
+    INPUT_DATA_TYPE = numpy.int8
+    INPUT_GRID_RADIUS = 10
 
     class STEP_SIZE_OF:
         BASE = 5
@@ -72,22 +90,19 @@ class COMPLEX_ENV(ENV):
         HORIZONTAL = 10
 
 
-class ONE_SERVO_ENV(ENV):
-    SINGLE_SERVO_ACTION_SPACE = ENV.STEP_RANGE * 2
-    ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE
-
-    class STEP_SIZE_OF:
-        BASE = 5
+class COMPLEX_ENV(_SHARED):
+    SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2 + 1
+    ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE ** 3
 
 
-class SIMPLE_ENV(ENV):
-    SINGLE_SERVO_ACTION_SPACE = ENV.STEP_RANGE * 2
-    ACTION_SPACE = SINGLE_SERVO_ACTION_SPACE * 3
+class ONE_SERVO_ENV(_SHARED):
+    SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2
+    ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE
 
-    class STEP_SIZE_OF:
-        BASE = 5
-        VERTICAL = 10
-        HORIZONTAL = 10
+
+class SIMPLE_ENV(_SHARED):
+    SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2
+    ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE * 3
 
 
 """----------------------------------------AI--------------------------------------------"""

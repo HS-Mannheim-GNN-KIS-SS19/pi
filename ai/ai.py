@@ -1,17 +1,16 @@
-import numpy as np
 import gym
+import numpy as np
+from keras.layers import Dense, Activation, Flatten
+from keras.models import Sequential
+from keras.optimizers import Adam
+from rl.agents.dqn import DQNAgent
+from rl.memory import SequentialMemory
+from rl.policy import BoltzmannQPolicy
 
 from constants import AI
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Flatten
-from keras.optimizers import Adam
-
-from rl.agents.dqn import DQNAgent
-from rl.policy import BoltzmannQPolicy
-from rl.memory import SequentialMemory
 
 
-class EezybotDQN():
+class EezybotDQN:
     def __init__(self, train=True, create_new=False):
         # Get the environment and extract the number of actions.
         print('building gym...')

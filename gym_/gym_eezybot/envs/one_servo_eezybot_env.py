@@ -9,9 +9,6 @@ class OneServoEezybotEnv(AbstractEezybotEnv):
         Actionspace: 1 * 2 = 2
     """
 
-    def _get_action_space_size(self):
-        return ONE_SERVO_ENV.ACTION_SPACE
-
     def _map_action_to_angle_offsets_tuple(self):
         actions = []
         for i in range(ONE_SERVO_ENV.STEP_RANGE):
@@ -20,4 +17,5 @@ class OneServoEezybotEnv(AbstractEezybotEnv):
         return actions
 
     def __init__(self):
-        AbstractEezybotEnv.__init__(self)
+        # noinspection PyTypeChecker
+        AbstractEezybotEnv.__init__(self, ONE_SERVO_ENV)

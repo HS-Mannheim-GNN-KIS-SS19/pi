@@ -9,9 +9,6 @@ class SimpleEezybotEnv(AbstractEezybotEnv):
         Actionspace: 3 * 2 = 6
     """
 
-    def _get_action_space_size(self):
-        return SIMPLE_ENV.ACTION_SPACE
-
     def _map_action_to_angle_offsets_tuple(self):
         actions = []
         for i in range(SIMPLE_ENV.STEP_RANGE):
@@ -24,4 +21,5 @@ class SimpleEezybotEnv(AbstractEezybotEnv):
         return actions
 
     def __init__(self):
-        AbstractEezybotEnv.__init__(self)
+        # noinspection PyTypeChecker
+        AbstractEezybotEnv.__init__(self, SIMPLE_ENV)

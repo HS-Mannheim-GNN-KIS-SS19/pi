@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import gym
 from gym import spaces
 
-from constants import ENV
+from constants import _I_ENV_PROPERTIES
 from eezybot_controller import eezybot
 from image_processing_interface import get_state
 from reward_calculation import *
@@ -16,14 +16,11 @@ class AbstractEezybotEnv(gym.Env, ABC):
     metadata = {'render.modes': ['human']}
 
     @abstractmethod
-    def _get_action_space_size(self):
-        pass
-
-    @abstractmethod
     def _map_action_to_angle_offsets_tuple(self):
         pass
 
-    def __init__(self):
+    @abstractmethod
+    def __init__(self, env_properties: _I_ENV_PROPERTIES):
         """The main OpenAI Gym class. It encapsulates an environment with
          arbitrary behind-the-scenes dynamics. An environment can be
          partially or fully observed.
@@ -50,10 +47,12 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.max_distance_to_eezybot = float('inf')
 
         # Should be 27 actions: 3 servos ^ 3 actions
-        self.action_space = spaces.Discrete(self._get_action_space_size())
+        self.action_space = spaces.Discrete(env_properties.ACTION_SPACE_SIZE)
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
-        self.observation_space = spaces.Box(-ENV.INPUT_RANGE, ENV.INPUT_RANGE, shape=(3,),
-                                            dtype=ENV.INPUT_DATA_TYPE)
+        self.observation_space = spaces.Box(-env_properties.INPUT_DATA_TYPE(env_properties.INPUT_GRID_RADIUS),
+                                            env_properties.INPUT_DATA_TYPE(env_properties.INPUT_GRID_RADIUS),
+                                            shape=(3,),
+                                            dtype=env_properties.INPUT_DATA_TYPE)
         self.reward_range = (-float('inf'), float('inf'))
         self.d_reward = None
         self.r_reward = None
@@ -145,6 +144,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
               in implementations to use the functionality of this method.
         Args:
             mode (str): the mode to render with
+            close (bool): -
         """
 
         print("current state: {}".format(self.state))
