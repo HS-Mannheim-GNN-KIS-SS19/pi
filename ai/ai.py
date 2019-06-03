@@ -14,7 +14,7 @@ class EezybotDQN:
     def __init__(self, train=True, create_new=False):
         # Get the environment and extract the number of actions.
         print('building gym...')
-        env = gym.make(AI.PROPERTIES.NAME)
+        env = gym.make(AI.PROPERTIES.ENV_NAME)
         np.random.seed(123)
         nb_actions = env.action_space.n
 

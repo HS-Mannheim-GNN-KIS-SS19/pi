@@ -114,7 +114,7 @@ class AI:
             """
                 These Properties must be implemented in any AI Properties Class
             """
-            NAME = NotImplemented  # type: str
+            ENV_NAME = NotImplemented  # type: str
             PATH = NotImplemented  # type: str
             STEPS = NotImplemented  # type: int
             LEARN_RATE = NotImplemented  # type: float
@@ -135,20 +135,29 @@ class AI:
             LEARN_RATE = 0.001
 
         class BY_ENV:
-            class Complex(_SHARED):
-                NAME = "ComplexEezybotEnv-v0"
-                PATH = 'dqn_{}_weights.h5f'.format(NAME)
-                LAYER_SIZES = [16, 16, 16]
+            class COMPLEX:
+                class V0(_SHARED):
+                    ENV_NAME = "ComplexEezybotEnv-v0"
+                    PATH = 'weights_of_{}.h5f'.format(
+                        str(__qualname__)[str(__qualname__).rfind("BY_ENV") + 7:].lower().replace(".", "_"))
+                    LAYER_SIZES = [16, 16, 16]
 
-            class SIMPLE(_SHARED):
-                NAME = "SimpleEezybotEnv-v0"
-                PATH = 'dqn_{}_weights.h5f'.format(NAME)
-                LAYER_SIZES = [16, 16, 16]
+            class SIMPLE:
+                class V0(_SHARED):
+                    ENV_NAME = "SimpleEezybotEnv-v0"
+                    PATH = 'weights_of_{}.h5f'.format(
+                        str(__qualname__)[str(__qualname__).rfind("BY_ENV") + 7:].lower().replace(".", "_"))
+                    LAYER_SIZES = [16, 16, 16]
 
-            class ONE_SERVO(_SHARED):
-                NAME = "OneServoEezybotEnv-v0"
-                PATH = 'dqn_{}_weights.h5f'.format(NAME)
-                LAYER_SIZES = [8, 8, 8]
+            class ONE_SERVO:
+                class V0(_SHARED):
+                    ENV_NAME = "OneServoEezybotEnv-v0"
+                    PATH = 'weights_of_{}.h5f'.format(
+                        str(__qualname__)[str(__qualname__).rfind("BY_ENV") + 7:].lower().replace(".", "_"))
+                    LAYER_SIZES = [8, 8, 8]
 
     # noinspection PyProtectedMember
-    PROPERTIES = _AI_TYPES.BY_ENV.ONE_SERVO  # type: _AI_TYPES._I_AI_PROPERTIES
+    PROPERTIES = _AI_TYPES.BY_ENV.ONE_SERVO.V0  # type: _AI_TYPES._I_AI_PROPERTIES
+
+
+print(AI.PROPERTIES.PATH)
