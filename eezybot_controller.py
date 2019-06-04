@@ -124,7 +124,7 @@ class _EezybotServoController(ServoController):
 
         def clear():
             self.dump_rotations()
-            print("dumping all rotations")
+            print("dump all rotations")
 
         def to_default():
             self.to_default()

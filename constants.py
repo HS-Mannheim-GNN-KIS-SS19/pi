@@ -5,14 +5,14 @@ import numpy
 
 
 class SERVO_CONTROLLER:
-    USE_FAKE_CONTROLLER = False
+    USE_FAKE_CONTROLLER = True
 
     class STEP:
         SIZE = 1
         TIME = 0.02
 
     class MANUEL_CONTROL:
-        STEP_SIZE = 5
+        DEFAULT_STEP_SIZE = 5
 
 
 class EEZYBOT_CONTROLLER:
@@ -49,7 +49,7 @@ class EEZYBOT_CONTROLLER:
 """----------------------------------------REWARD--------------------------------------------"""
 
 
-class REWARD:
+class DEFAULT_REWARD:
     DISTANCE_MULTIPLIER = 10
     RADIUS_MULTIPLIER = 60
     FOR_FAILING = -10
@@ -58,7 +58,7 @@ class REWARD:
 """----------------------------------------ENV--------------------------------------------"""
 
 
-class _I_ENV_PROPERTIES(ABC):
+class I_ENV_PROPERTIES(ABC):
     """
         These Properties must be implemented in any Env Properties Class
 
@@ -69,10 +69,17 @@ class _I_ENV_PROPERTIES(ABC):
     """
     INPUT_DATA_TYPE = NotImplemented  # type: numpy.int8 or numpy.int16 or numpy.int32 or numpy.float32 or numpy.float64
     INPUT_GRID_RADIUS = NotImplemented  # type: int
+    SINGLE_SERVO_ACTION_SPACE = NotImplemented  # type: int
     ACTION_SPACE_SIZE = NotImplemented  # type: int
+    STEP_RANGE = NotImplemented  # type: int
+
+    class STEP_SIZE_OF:
+        BASE = NotImplemented  # type: int
+        VERTICAL = NotImplemented  # type: int
+        HORIZONTAL = NotImplemented  # type: int
 
 
-class _SHARED(_I_ENV_PROPERTIES, ABC):
+class _SHARED(I_ENV_PROPERTIES, ABC):
     """
         These Properties are shared among different Env's.
         Env Properties inheriting from this Class may override specific Properties
@@ -90,17 +97,17 @@ class _SHARED(_I_ENV_PROPERTIES, ABC):
         HORIZONTAL = 10
 
 
-class COMPLEX_ENV(_SHARED):
+class DEFAULT_COMPLEX_ENV_PROPERTIES(_SHARED):
     SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2 + 1
     ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE ** 3
 
 
-class ONE_SERVO_ENV(_SHARED):
+class DEFAULT_ONE_SERVO_ENV_PROPERTIES(_SHARED):
     SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2
     ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE
 
 
-class SIMPLE_ENV(_SHARED):
+class DEFAULT_SIMPLE_ENV_PROPERTIES(_SHARED):
     SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2
     ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE * 3
 
@@ -108,56 +115,67 @@ class SIMPLE_ENV(_SHARED):
 """----------------------------------------AI--------------------------------------------"""
 
 
+def weights_path_by_qualname(qualname, find):
+    return 'weights_of_{}.h5f'.format(
+        str(qualname)[str(qualname).rfind(find) + len(find) + 1:].lower().replace(".", "_"))
+
+
+class I_AI_PROPERTIES(ABC):
+    """
+        These Properties must be implemented in any AI Properties Class
+    """
+    ENV_NAME = NotImplemented  # type: str
+    WEIGHTS_PATH = NotImplemented  # type: str
+    STEPS = NotImplemented  # type: int
+    LEARN_RATE = NotImplemented  # type: float
+    LAYER_SIZES = NotImplemented  # type: [int] # lenght: HIDDEN_LAYER_AMOUNT
+    ENV_PROPERTIES = NotImplemented  # type: I_ENV_PROPERTIES
+
+    class REWARD:
+        DISTANCE_MULTIPLIER = NotImplemented  # type: int
+        RADIUS_MULTIPLIER = NotImplemented  # type: int
+        FOR_FAILING = NotImplemented  # type: int
+
+
+class _SHARED_AI_PROPERTIES(I_AI_PROPERTIES, ABC):
+    """
+        These Properties are shared among different AI's.
+        AI Properties inheriting from this Class may override specific Properties
+        AI Properties inheriting from this Class must override NAME, PATH, LAYERSIZES, ENV_PROPERTIES
+
+
+        :not implemented: NAME
+        :not implemented: PATH
+        :not implemented: LAYERSIZES
+        :not implemented ENV_PROPERTIES
+    """
+    STEPS = 100
+    LEARN_RATE = 0.001
+    REWARD = DEFAULT_REWARD
+
+
 class AI:
-    class _AI_TYPES:
-        class _I_AI_PROPERTIES(ABC):
-            """
-                These Properties must be implemented in any AI Properties Class
-            """
-            ENV_NAME = NotImplemented  # type: str
-            PATH = NotImplemented  # type: str
-            STEPS = NotImplemented  # type: int
-            LEARN_RATE = NotImplemented  # type: float
-            LAYER_SIZES = NotImplemented  # type: [int] # lenght: HIDDEN_LAYER_AMOUNT
+    class _AI_PROPERTIES_FOR:
+        class COMPLEX:
+            class V0(_SHARED_AI_PROPERTIES):
+                ENV_NAME = "ComplexEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [16, 16, 16]
+                ENV_PROPERTIES = DEFAULT_COMPLEX_ENV_PROPERTIES
 
-        class _SHARED(_I_AI_PROPERTIES, ABC):
-            """
-                These Properties are shared among different AI's.
-                AI Properties inheriting from this Class may override specific Properties
-                AI Properties inheriting from this Class must override NAME, PATH, LAYERSIZES
+        class SIMPLE:
+            class V0(_SHARED_AI_PROPERTIES):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [16, 16, 16]
+                ENV_PROPERTIES = DEFAULT_SIMPLE_ENV_PROPERTIES
 
-
-                :not implemented: NAME
-                :not implemented: PATH
-                :not implemented: LAYERSIZES
-            """
-            STEPS = 100
-            LEARN_RATE = 0.001
-
-        class BY_ENV:
-            class COMPLEX:
-                class V0(_SHARED):
-                    ENV_NAME = "ComplexEezybotEnv-v0"
-                    PATH = 'weights_of_{}.h5f'.format(
-                        str(__qualname__)[str(__qualname__).rfind("BY_ENV") + 7:].lower().replace(".", "_"))
-                    LAYER_SIZES = [16, 16, 16]
-
-            class SIMPLE:
-                class V0(_SHARED):
-                    ENV_NAME = "SimpleEezybotEnv-v0"
-                    PATH = 'weights_of_{}.h5f'.format(
-                        str(__qualname__)[str(__qualname__).rfind("BY_ENV") + 7:].lower().replace(".", "_"))
-                    LAYER_SIZES = [16, 16, 16]
-
-            class ONE_SERVO:
-                class V0(_SHARED):
-                    ENV_NAME = "OneServoEezybotEnv-v0"
-                    PATH = 'weights_of_{}.h5f'.format(
-                        str(__qualname__)[str(__qualname__).rfind("BY_ENV") + 7:].lower().replace(".", "_"))
-                    LAYER_SIZES = [8, 8, 8]
+        class ONE_SERVO:
+            class V0(_SHARED_AI_PROPERTIES):
+                ENV_NAME = "OneServoEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [8, 8, 8]
+                ENV_PROPERTIES = DEFAULT_ONE_SERVO_ENV_PROPERTIES
 
     # noinspection PyProtectedMember
-    PROPERTIES = _AI_TYPES.BY_ENV.ONE_SERVO.V0  # type: _AI_TYPES._I_AI_PROPERTIES
-
-
-print(AI.PROPERTIES.PATH)
+    PROPERTIES = _AI_PROPERTIES_FOR.ONE_SERVO.V0  # type: I_AI_PROPERTIES

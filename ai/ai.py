@@ -22,9 +22,7 @@ class EezybotDQN:
         # Next, we build a very simple model.
         model = Sequential()
         model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
-        # noinspection PyUnresolvedReferences
         for layer_size in AI.PROPERTIES.LAYER_SIZES:
-            # noinspection PyUnresolvedReferences
             model.add(Dense(layer_size))
         model.add(Activation('relu'))
         model.add(Dense(nb_actions))
@@ -32,8 +30,7 @@ class EezybotDQN:
         print(model.summary())
         if not create_new:
             try:
-                # noinspection PyUnresolvedReferences
-                model.load_weights(AI.PROPERTIES.FILEPATH)
+                model.load_weights(AI.PROPERTIES.WEIGHTS_PATH)
             except OSError:
                 print("No saved weights found")
         # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
@@ -49,12 +46,10 @@ class EezybotDQN:
         # Ctrl + C.
         if train:
             print('start learning...')
-            # noinspection PyUnresolvedReferences
             dqn.fit(env, nb_steps=AI.PROPERTIES.STEPS, visualize=True, verbose=2)
 
             # After training is done, we save the final weights.
-            # noinspection PyUnresolvedReferences
-            dqn.save_weights(AI.PROPERTIES.FILEPATH, overwrite=True)
+            dqn.save_weights(AI.PROPERTIES.WEIGHTS_PATH, overwrite=True)
             print("saved weights")
         else:
             # Finally, evaluate our algorithm for 5 episodes.

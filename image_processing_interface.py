@@ -1,4 +1,4 @@
-from constants import _I_ENV_PROPERTIES
+from constants import AI
 from image_processing import detect
 
 
@@ -16,8 +16,8 @@ def get_state():
 
     scale = 2.0 / map["shape"][0]
     return tuple(
-        [_I_ENV_PROPERTIES.INPUT_DATA_TYPE((round(x * _I_ENV_PROPERTIES.INPUT_GRID_RADIUS * scale + 1.0))) for x in
-         biggest])
+        [AI.PROPERTIES.ENV_PROPERTIES.INPUT_DATA_TYPE(
+            (round(x * AI.PROPERTIES.ENV_PROPERTIES.INPUT_GRID_RADIUS * scale + 1.0))) for x in biggest])
 
 
 if __name__ == '__main__':

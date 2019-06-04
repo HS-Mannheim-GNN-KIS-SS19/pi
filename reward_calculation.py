@@ -1,6 +1,8 @@
 import numpy as np
 
-from constants import REWARD
+from constants import AI
+
+REWARD = AI.PROPERTIES.REWARD
 
 
 def vector_length(vector):

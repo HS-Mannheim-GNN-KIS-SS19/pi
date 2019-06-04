@@ -63,6 +63,10 @@ if __name__ == '__main__':
 
     while True:
         ai_interface.go_to_marble(train, new)
-        eezybot.clutch.start().grab().finish_and_shutdown().join()
-        ai_interface.go_to_destination()
-        eezybot.clutch.start().release().finish_and_shutdown().join()
+        eezybot.clutch.start().grab().wait()
+        eezybot.base.start().rotate(180).finish_and_shutdown()
+        eezybot.verticalArm.start().to_default().finish_and_shutdown()
+        eezybot.horizontalArm.start().to_default().finish_and_shutdown()
+        eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
+                                      eezybot.horizontalArm).release().finish_and_shutdown()
+        eezybot.join()

@@ -70,7 +70,7 @@ def ensure_in_bounds(angle):
 
 class Servo:
 
-    def __init__(self, channel_number, min_degree, max_degree, default_degree, name=None):
+    def __init__(self, channel_number, min_degree, default_degree, max_degree, name=None):
 
         # IGNORE ERROR: imports depending on Python version
         is_pi2 = sys.version_info < (3, 0)
@@ -126,17 +126,17 @@ class Servo:
         self.__shutdown_rotation_controller = True
         return self
 
-    def finish_and_shutdown(self, final_rotation=None, dump_rotations=False):
+    def _finish_and_shutdown(self, final_rotation=None, dump_rotations=False):
         """
-            sets flag to prevent new rotations to be added to the queue
-            then waits for all rotations to be performed
-            finally sets flag to shutdown the Rotation Control Thread
+          sets flag to prevent new rotations to be added to the queue
+          then waits for all rotations to be performed
+          finally sets flag to shutdown the Rotation Control Thread
 
-        :param final_rotation: the last rotation before shutting down will be of this angle
-        :param dump_rotations: if True, currently performed rotation as well as all queued rotations will be canceled.
+      :param final_rotation: the last rotation before shutting down will be of this angle
+      :param dump_rotations: if True, currently performed rotation as well as all queued rotations will be canceled.
 
-        :raises NotStartedException
-        """
+      :raises NotStartedException
+      """
         if self.__rotation_controller_thread is None or not self.__rotation_controller_thread.is_alive():
             raise NotStartedException(
                 "{} wasn't running but tried to shut down".format(self.name))
@@ -149,6 +149,13 @@ class Servo:
                 self.__rotation_queue.put(final_rotation)
             self.wait()
             self.__shutdown_rotation_controller = True
+        return self
+
+    def finish_and_shutdown(self, final_rotation=None, dump_rotations=False):
+        threading.Thread(target=self._finish_and_shutdown,
+                         kwargs={"dump_rotations": dump_rotations,
+                                 "final_rotation": final_rotation},
+                         daemon=True).start()
         return self
 
     """-----------------------------ADD ROTATION TO QUEUE----------------------------------------------------"""
@@ -259,6 +266,8 @@ class Servo:
             try:
                 # blocking if queue is empty
                 angle = self.__rotation_queue.get(timeout=0.1)
+                while not self.__wait_for_other_servo_queue.empty():
+                    self.__wait_for_other_servo_queue.get().wait()
                 self.__run_rotation(angle)
                 self.__rotation_queue.task_done()
             except Empty:
@@ -356,10 +365,7 @@ class ServoController:
             instead cancels all currently performed rotations and clears the queues
         """
         for i, servo in enumerate(self.servos):
-            threading.Thread(target=servo.finish_and_shutdown,
-                             kwargs={"dump_rotations": dump_rotations,
-                                     "final_rotation": args[i] if i < len(args) else None},
-                             daemon=True).start()
+            servo.finish_and_shutdown(dump_rotations=dump_rotations, final_rotation=args[i] if i < len(args) else None)
         return self
 
     def join(self, timeout=None):
@@ -457,7 +463,7 @@ class ServoKeyListener(KeyListener):
         if func_dictionary is None:
             func_dictionary = {}
 
-        self.step_size = SERVO.MANUEL_CONTROL.STEP_SIZE
+        self.step_size = SERVO.MANUEL_CONTROL.DEFAULT_STEP_SIZE
         func_dictionary.update({step_control[0]: (self.step_size_up,), step_control[1]: (self.step_size_down,)})
         for servo_tuple in servo_tuples:
             func_dictionary.update(

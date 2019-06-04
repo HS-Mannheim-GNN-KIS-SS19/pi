@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import gym
 from gym import spaces
 
-from constants import _I_ENV_PROPERTIES
+from constants import I_ENV_PROPERTIES
 from eezybot_controller import eezybot
 from image_processing_interface import get_state
 from reward_calculation import *
@@ -16,11 +16,11 @@ class AbstractEezybotEnv(gym.Env, ABC):
     metadata = {'render.modes': ['human']}
 
     @abstractmethod
-    def _map_action_to_angle_offsets_tuple(self):
+    def _map_action_to_angle_offset_tuple(self):
         pass
 
     @abstractmethod
-    def __init__(self, env_properties: _I_ENV_PROPERTIES):
+    def __init__(self, env_properties: I_ENV_PROPERTIES):
         """The main OpenAI Gym class. It encapsulates an environment with
          arbitrary behind-the-scenes dynamics. An environment can be
          partially or fully observed.
@@ -58,7 +58,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.r_reward = None
         self.reward = None
 
-        self.actions_tuple = self._map_action_to_angle_offsets_tuple()
+        self.actions_tuple = self._map_action_to_angle_offset_tuple()
         self.state = None
         self.reset()
 
