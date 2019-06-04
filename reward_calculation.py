@@ -10,7 +10,7 @@ def vector_length(vector):
 
 
 def distance_reward(old_state, new_state):
-    return vector_length(new_state) - vector_length(old_state)
+    return -(vector_length(new_state) - vector_length(old_state))
 
 
 def radius_reward(old_r, new_r):

@@ -5,7 +5,7 @@ import numpy
 
 
 class SERVO_CONTROLLER:
-    USE_FAKE_CONTROLLER = True
+    USE_FAKE_CONTROLLER = False
 
     class STEP:
         SIZE = 1
@@ -25,20 +25,20 @@ class EEZYBOT_CONTROLLER:
     class HORIZONTAL:
         CHANNEL = 1
         MIN = 0
-        DEFAULT = 0
+        DEFAULT = MIN
         MAX = 125
 
     class VERTICAL:
         CHANNEL = 2
         MIN = 0
-        DEFAULT = 180
-        MAX = 180
+        MAX = 150
+        DEFAULT = MAX
 
     class CLUTCH:
         CHANNEL = 3
         MIN = 0
-        DEFAULT = 60
         MAX = 180
+        DEFAULT = MAX
         GRAB = 35
         RELEASE = DEFAULT
 
@@ -50,9 +50,10 @@ class EEZYBOT_CONTROLLER:
 
 
 class DEFAULT_REWARD:
-    DISTANCE_MULTIPLIER = 10
-    RADIUS_MULTIPLIER = 60
-    FOR_FAILING = -10
+    DISTANCE_MULTIPLIER = 1
+    RADIUS_MULTIPLIER = 1
+    _fail = -100
+    FOR_FAILING = [_fail, _fail, _fail]
 
 
 """----------------------------------------ENV--------------------------------------------"""
@@ -89,12 +90,12 @@ class _SHARED(I_ENV_PROPERTIES, ABC):
     """
     STEP_RANGE = 1
     INPUT_DATA_TYPE = numpy.int8
-    INPUT_GRID_RADIUS = 10
+    INPUT_GRID_RADIUS = 100
 
     class STEP_SIZE_OF:
         BASE = 5
-        VERTICAL = 10
-        HORIZONTAL = 10
+        VERTICAL = 20
+        HORIZONTAL = 20
 
 
 class DEFAULT_COMPLEX_ENV_PROPERTIES(_SHARED):
@@ -149,7 +150,7 @@ class _SHARED_AI_PROPERTIES(I_AI_PROPERTIES, ABC):
         :not implemented: LAYERSIZES
         :not implemented ENV_PROPERTIES
     """
-    STEPS = 100
+    STEPS = 1000
     LEARN_RATE = 0.001
     REWARD = DEFAULT_REWARD
 
@@ -170,12 +171,30 @@ class AI:
                 LAYER_SIZES = [16, 16, 16]
                 ENV_PROPERTIES = DEFAULT_SIMPLE_ENV_PROPERTIES
 
+            class V1(_SHARED_AI_PROPERTIES):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [32, 32, 32]
+
+                class V1ENV_PROPERTIES(DEFAULT_SIMPLE_ENV_PROPERTIES):
+                    INPUT_DATA_TYPE = numpy.int8
+                    INPUT_GRID_RADIUS = 100
+
+                ENV_PROPERTIES = V1ENV_PROPERTIES
+
+                class V1REWARD(DEFAULT_REWARD):
+                    DISTANCE_MULTIPLIER = 1
+                    RADIUS_MULTIPLIER = 1
+
+                REWARD = V1REWARD
+
         class ONE_SERVO:
             class V0(_SHARED_AI_PROPERTIES):
                 ENV_NAME = "OneServoEezybotEnv-v0"
+                LEARN_RATE = 0.01
                 WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
                 LAYER_SIZES = [8, 8, 8]
                 ENV_PROPERTIES = DEFAULT_ONE_SERVO_ENV_PROPERTIES
 
     # noinspection PyProtectedMember
-    PROPERTIES = _AI_PROPERTIES_FOR.ONE_SERVO.V0  # type: I_AI_PROPERTIES
+    PROPERTIES = _AI_PROPERTIES_FOR.SIMPLE.V1  # type: I_AI_PROPERTIES

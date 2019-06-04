@@ -5,7 +5,7 @@ from keras.models import Sequential
 from keras.optimizers import Adam
 from rl.agents.dqn import DQNAgent
 from rl.memory import SequentialMemory
-from rl.policy import BoltzmannQPolicy
+from rl.policy import EpsGreedyQPolicy
 
 from constants import AI
 
@@ -24,7 +24,7 @@ class EezybotDQN:
         model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
         for layer_size in AI.PROPERTIES.LAYER_SIZES:
             model.add(Dense(layer_size))
-        model.add(Activation('relu'))
+            model.add(Activation('relu'))
         model.add(Dense(nb_actions))
         model.add(Activation('linear'))
         print(model.summary())
@@ -35,9 +35,9 @@ class EezybotDQN:
                 print("No saved weights found")
         # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
         # even the metrics!
-        memory = SequentialMemory(limit=1000, window_length=1)
-        policy = BoltzmannQPolicy()
-        dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=30,
+        memory = SequentialMemory(limit=100000, window_length=1)
+        policy = EpsGreedyQPolicy(eps=0.20)
+        dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmup=100,
                        target_model_update=1e-2, policy=policy)
         # noinspection PyUnresolvedReferences
         dqn.compile(Adam(lr=AI.PROPERTIES.LEARN_RATE), metrics=['mae'])

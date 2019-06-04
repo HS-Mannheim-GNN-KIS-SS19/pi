@@ -14,12 +14,12 @@ class SimpleEezybotEnv(AbstractEezybotEnv):
     def _map_action_to_angle_offset_tuple(self):
         actions = []
         for i in range(PROPERTIES.STEP_RANGE):
-            actions.append((-1 * i * PROPERTIES.STEP_SIZE_OF.BASE, 0, 0))
-            actions.append((1 * i * PROPERTIES.STEP_SIZE_OF.BASE, 0, 0))
-            actions.append((-1 * i * PROPERTIES.STEP_SIZE_OF.VERTICAL, 0, 0))
-            actions.append((1 * i * PROPERTIES.STEP_SIZE_OF.VERTICAL, 0, 0))
-            actions.append((-1 * i * PROPERTIES.STEP_SIZE_OF.HORIZONTAL, 0, 0))
-            actions.append((1 * i * PROPERTIES.STEP_SIZE_OF.HORIZONTAL, 0, 0))
+            actions.append((-1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.BASE, 0, 0))
+            actions.append((1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.BASE, 0, 0))
+            actions.append((0, -1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.VERTICAL, 0))
+            actions.append((0, 1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.VERTICAL, 0))
+            actions.append((0, 0, -1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.HORIZONTAL))
+            actions.append((0, 0, 1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.HORIZONTAL))
         return actions
 
     def __init__(self):

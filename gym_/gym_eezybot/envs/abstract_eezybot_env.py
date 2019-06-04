@@ -54,11 +54,12 @@ class AbstractEezybotEnv(gym.Env, ABC):
                                             shape=(3,),
                                             dtype=env_properties.INPUT_DATA_TYPE)
         self.reward_range = (-float('inf'), float('inf'))
+        self.action = None
         self.d_reward = None
         self.r_reward = None
         self.reward = None
 
-        self.actions_tuple = self._map_action_to_angle_offset_tuple()
+        self.action_tuples = self._map_action_to_angle_offset_tuple()
         self.state = None
         self.reset()
 
@@ -69,25 +70,22 @@ class AbstractEezybotEnv(gym.Env, ABC):
         return False
 
     def _take_action(self, action):
-        base_angle, arm_vertical_angle, arm_horizontal_angle = self.actions_tuple[action]
+        base_angle, arm_vertical_angle, arm_horizontal_angle = self.action_tuples[action]
         rotation_successful = True
         try:
             if base_angle != 0:
                 eezybot.base.step(base_angle)
         except OutOfBoundsException as e:
-            print(e)
             rotation_successful = False
         try:
             if arm_vertical_angle != 0:
                 eezybot.verticalArm.step(arm_vertical_angle)
         except OutOfBoundsException as e:
-            print(e)
             rotation_successful = False
         try:
             if arm_horizontal_angle != 0:
                 eezybot.horizontalArm.step(arm_horizontal_angle)
         except OutOfBoundsException as e:
-            print(e)
             rotation_successful = False
         eezybot.start().finish_and_shutdown()
         return rotation_successful
@@ -110,6 +108,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful = self._take_action(action)
         old_state = self.state
         eezybot.join()
+        self.action = action
         self.state = get_state()
         self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         episode_over = self._is_episode_over(self.state, rotation_successful)
@@ -148,6 +147,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         """
 
         print("current state: {}".format(self.state))
+        print("Action: {}".format(self.action_tuples[self.action]))
         print("{} = d_reward: {} + r_reward: {}".format(self.reward, self.d_reward * REWARD.DISTANCE_MULTIPLIER,
                                                         self.r_reward * REWARD.RADIUS_MULTIPLIER))
 

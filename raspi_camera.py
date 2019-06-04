@@ -1,6 +1,7 @@
-from picamera.array import PiRGBArray
-from picamera import PiCamera
 import time
+
+from picamera import PiCamera
+from picamera.array import PiRGBArray
 
 camera = None
 
@@ -10,7 +11,7 @@ def take_picture():
 
     if camera is None:
         camera = PiCamera()
-        camera.resolution = (256, 256)
+        camera.resolution = (1024, 1024)
         # allow the camera to warmup
         time.sleep(1)
 
