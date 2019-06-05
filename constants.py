@@ -174,11 +174,11 @@ class AI:
             class V1(_SHARED_AI_PROPERTIES):
                 ENV_NAME = "SimpleEezybotEnv-v0"
                 WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [32, 32, 32]
+                LAYER_SIZES = [16, 16, 16]
 
                 class V1ENV_PROPERTIES(DEFAULT_SIMPLE_ENV_PROPERTIES):
-                    INPUT_DATA_TYPE = numpy.int8
-                    INPUT_GRID_RADIUS = 100
+                    INPUT_DATA_TYPE = numpy.int16
+                    INPUT_GRID_RADIUS = 1000
 
                 ENV_PROPERTIES = V1ENV_PROPERTIES
 
@@ -187,6 +187,46 @@ class AI:
                     RADIUS_MULTIPLIER = 1
 
                 REWARD = V1REWARD
+
+            class V2(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [32, 32, 32]
+
+            class V3(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [48, 48, 48]
+
+            class V4(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [64, 64, 64]
+
+            class V5(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [64, 32, 32]
+
+            class V6(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [128, 32, 32]
+
+            class V7(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [64, 64, 32]
+
+            class V8(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [128, 64, 32]
+
+            class V9(V1):
+                ENV_NAME = "SimpleEezybotEnv-v0"
+                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+                LAYER_SIZES = [256, 32, 32]
 
         class ONE_SERVO:
             class V0(_SHARED_AI_PROPERTIES):
