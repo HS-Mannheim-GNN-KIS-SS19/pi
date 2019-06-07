@@ -39,8 +39,8 @@ class EEZYBOT_CONTROLLER:
         MIN = 0
         MAX = 180
         DEFAULT = MAX
-        GRAB = 35
-        RELEASE = DEFAULT
+        GRAB = MIN
+        RELEASE = MAX
 
     class MANUEL_CONTROL:
         RESOLVE_REWARDS = True
@@ -52,7 +52,7 @@ class EEZYBOT_CONTROLLER:
 class DEFAULT_REWARD:
     DISTANCE_MULTIPLIER = 1
     RADIUS_MULTIPLIER = 1
-    _fail = -400
+    _fail = -1000
     FOR_FAILING = [_fail, _fail, _fail]
     _success = 10000
     FOR_SUCCESS = [_success, _success, _success]
@@ -158,9 +158,9 @@ class _SHARED_AI_PROPERTIES(I_AI_PROPERTIES, ABC):
         :not implemented: LAYERSIZES
         :not implemented ENV_PROPERTIES
     """
-    ENTRY_STEPS_FOR_NEW_AI = 50
-    ENTRY_EPSILON_FOR_NEW_AI = 0.5
-    WARM_UP_STEPS = 30
+    ENTRY_STEPS_FOR_NEW_AI = 150
+    ENTRY_EPSILON_FOR_NEW_AI = 0.4
+    WARM_UP_STEPS = 40
     STEPS = 100
     EPSILON = 0.2
     LEARN_RATE = 0.001
@@ -169,6 +169,31 @@ class _SHARED_AI_PROPERTIES(I_AI_PROPERTIES, ABC):
 
 
 class AI:
+    class _WORKING_PROPERTIES:
+        class V0(I_AI_PROPERTIES):
+            ENTRY_STEPS_FOR_NEW_AI = 150
+            ENTRY_EPSILON_FOR_NEW_AI = 0.4
+            WARM_UP_STEPS = 40
+            STEPS = 100
+            EPSILON = 0.2
+            LEARN_RATE = 0.001
+            TEST_EPISODES = 5
+            ENV_NAME = "SimpleEezybotEnv-v0"
+            WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
+            LAYER_SIZES = [32, 32, 32]
+
+            class FINAL_ENV_PROPERTIES(DEFAULT_SIMPLE_ENV_PROPERTIES):
+                INPUT_DATA_TYPE = numpy.int32
+                INPUT_GRID_RADIUS = 1000
+
+            ENV_PROPERTIES = FINAL_ENV_PROPERTIES
+
+            class FINAL_REWARD(DEFAULT_REWARD):
+                DISTANCE_MULTIPLIER = 1
+                RADIUS_MULTIPLIER = 6
+
+            REWARD = FINAL_REWARD
+
     class _AI_PROPERTIES_FOR:
         class COMPLEX:
             class V0(_SHARED_AI_PROPERTIES):
@@ -197,7 +222,7 @@ class AI:
 
                 class V1REWARD(DEFAULT_REWARD):
                     DISTANCE_MULTIPLIER = 1
-                    RADIUS_MULTIPLIER = 4
+                    RADIUS_MULTIPLIER = 6
 
                 REWARD = V1REWARD
 
@@ -229,7 +254,7 @@ class AI:
             class V7(V1):
                 ENV_NAME = "SimpleEezybotEnv-v0"
                 WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [64, 64, 32]
+                LAYER_SIZES = [8, 8, 8]
 
             class V8(V1):
                 ENV_NAME = "SimpleEezybotEnv-v0"
@@ -250,4 +275,4 @@ class AI:
                 ENV_PROPERTIES = DEFAULT_ONE_SERVO_ENV_PROPERTIES
 
     # noinspection PyProtectedMember
-    PROPERTIES = _AI_PROPERTIES_FOR.SIMPLE.V5  # type: I_AI_PROPERTIES
+    PROPERTIES = _AI_PROPERTIES_FOR.SIMPLE.V2  # type: I_AI_PROPERTIES

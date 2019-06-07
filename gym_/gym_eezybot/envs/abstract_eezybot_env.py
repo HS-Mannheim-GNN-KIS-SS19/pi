@@ -1,4 +1,3 @@
-import time
 from abc import ABC, abstractmethod
 
 import gym
@@ -66,14 +65,11 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.reset()
 
     def grab(self):
-        eezybot.base.start().rotate(
-            eezybot.base.ensure_in_bounds(eezybot.base.get_rotation() + 20))
         eezybot.verticalArm.start().rotate(
-            eezybot.verticalArm.ensure_in_bounds(eezybot.verticalArm.get_rotation() - 20))
-        eezybot.horizontalArm.start().rotate(
-            eezybot.horizontalArm.ensure_in_bounds(eezybot.horizontalArm.get_rotation() + 80))
+            eezybot.verticalArm.ensure_in_bounds(eezybot.verticalArm.get_rotation() + 20))
+        eezybot.horizontalArm.start().rotate(eezybot.horizontalArm.max_degree)
         eezybot.clutch.start().grab().wait()
-        eezybot.base.rotate_relative(1).finish_and_shutdown()
+        eezybot.base.start().rotate_relative(1).finish_and_shutdown()
         eezybot.verticalArm.to_default().finish_and_shutdown()
         eezybot.horizontalArm.rotate_relative(0.5).finish_and_shutdown()
         eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
@@ -81,11 +77,11 @@ class AbstractEezybotEnv(gym.Env, ABC):
 
     # TODO add reward for success
     def _is_episode_over(self, new_state, rotation_successful):
-        if new_state == (0, 0, 0) or not rotation_successful:
+        if new_state == (0, 0, 0) or not rotation_successful or new_state[1] < 30:
             return True
         GRID = AI.PROPERTIES.ENV_PROPERTIES.INPUT_GRID_RADIUS
         print(vector_length(new_state[0:2]))
-        if new_state[2] > 0.33 * GRID:
+        if new_state[2] > 0.18 * GRID:
             print("SUCCESSS!!!")
             self.grab()
             return True
@@ -99,16 +95,19 @@ class AbstractEezybotEnv(gym.Env, ABC):
                 eezybot.base.step(base_angle)
         except OutOfBoundsException as e:
             rotation_successful = False
+            print(e)
         try:
             if arm_vertical_angle != 0:
                 eezybot.verticalArm.step(arm_vertical_angle)
         except OutOfBoundsException as e:
             rotation_successful = False
+            print(e)
         try:
             if arm_horizontal_angle != 0:
                 eezybot.horizontalArm.step(arm_horizontal_angle)
         except OutOfBoundsException as e:
             rotation_successful = False
+            print(e)
         eezybot.start().finish_and_shutdown()
         return rotation_successful
 

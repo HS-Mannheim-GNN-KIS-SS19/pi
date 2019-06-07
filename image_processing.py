@@ -18,8 +18,8 @@ def _find_marbles(image, color_lower, color_upper):
 
     mask = cv2.inRange(hsv, color_lower, color_upper)
     res = cv2.bitwise_and(image, image, mask=mask)
-    cv2.imshow('image <-> res', np.hstack([image, res]))
-    cv2.imshow('mask', mask)
+    # cv2.imshow('image <-> res', np.hstack([image, res]))
+    # cv2.imshow('mask', mask)
     res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
 
     conts = cv2.findContours(res, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
