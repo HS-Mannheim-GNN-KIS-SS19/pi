@@ -25,14 +25,14 @@ class EEZYBOT_CONTROLLER:
     class HORIZONTAL:
         CHANNEL = 1
         MIN = 0
-        DEFAULT = MIN
+        DEFAULT = 21
         MAX = 125
 
     class VERTICAL:
         CHANNEL = 2
         MIN = 0
         MAX = 150
-        DEFAULT = MAX
+        DEFAULT = 129
 
     class CLUTCH:
         CHANNEL = 3
@@ -43,7 +43,7 @@ class EEZYBOT_CONTROLLER:
         RELEASE = DEFAULT
 
     class MANUEL_CONTROL:
-        RESOLVE_REWARDS = False
+        RESOLVE_REWARDS = True
 
 
 """----------------------------------------REWARD--------------------------------------------"""
@@ -52,8 +52,10 @@ class EEZYBOT_CONTROLLER:
 class DEFAULT_REWARD:
     DISTANCE_MULTIPLIER = 1
     RADIUS_MULTIPLIER = 1
-    _fail = -100
+    _fail = -400
     FOR_FAILING = [_fail, _fail, _fail]
+    _success = 10000
+    FOR_SUCCESS = [_success, _success, _success]
 
 
 """----------------------------------------ENV--------------------------------------------"""
@@ -127,8 +129,13 @@ class I_AI_PROPERTIES(ABC):
     """
     ENV_NAME = NotImplemented  # type: str
     WEIGHTS_PATH = NotImplemented  # type: str
+    WARM_UP_STEPS = NotImplemented  # type: int
+    ENTRY_STEPS_FOR_NEW_AI = NotImplemented  # type: int
+    ENTRY_EPSILON_FOR_NEW_AI = NotImplemented  # type: int
     STEPS = NotImplemented  # type: int
+    EPSILON = NotImplemented  # type: float
     LEARN_RATE = NotImplemented  # type: float
+    TEST_EPISODES = NotImplemented  # type: int
     LAYER_SIZES = NotImplemented  # type: [int] # lenght: HIDDEN_LAYER_AMOUNT
     ENV_PROPERTIES = NotImplemented  # type: I_ENV_PROPERTIES
 
@@ -136,6 +143,7 @@ class I_AI_PROPERTIES(ABC):
         DISTANCE_MULTIPLIER = NotImplemented  # type: int
         RADIUS_MULTIPLIER = NotImplemented  # type: int
         FOR_FAILING = NotImplemented  # type: int
+        FOR_SUCCESS = NotImplemented  # type: int
 
 
 class _SHARED_AI_PROPERTIES(I_AI_PROPERTIES, ABC):
@@ -150,9 +158,14 @@ class _SHARED_AI_PROPERTIES(I_AI_PROPERTIES, ABC):
         :not implemented: LAYERSIZES
         :not implemented ENV_PROPERTIES
     """
-    STEPS = 1000
+    ENTRY_STEPS_FOR_NEW_AI = 50
+    ENTRY_EPSILON_FOR_NEW_AI = 0.5
+    WARM_UP_STEPS = 30
+    STEPS = 100
+    EPSILON = 0.2
     LEARN_RATE = 0.001
     REWARD = DEFAULT_REWARD
+    TEST_EPISODES = 5
 
 
 class AI:
@@ -177,14 +190,14 @@ class AI:
                 LAYER_SIZES = [16, 16, 16]
 
                 class V1ENV_PROPERTIES(DEFAULT_SIMPLE_ENV_PROPERTIES):
-                    INPUT_DATA_TYPE = numpy.int16
+                    INPUT_DATA_TYPE = numpy.int32
                     INPUT_GRID_RADIUS = 1000
 
                 ENV_PROPERTIES = V1ENV_PROPERTIES
 
                 class V1REWARD(DEFAULT_REWARD):
                     DISTANCE_MULTIPLIER = 1
-                    RADIUS_MULTIPLIER = 1
+                    RADIUS_MULTIPLIER = 4
 
                 REWARD = V1REWARD
 
@@ -206,7 +219,7 @@ class AI:
             class V5(V1):
                 ENV_NAME = "SimpleEezybotEnv-v0"
                 WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [64, 32, 32]
+                LAYER_SIZES = [64, 48, 48]
 
             class V6(V1):
                 ENV_NAME = "SimpleEezybotEnv-v0"
@@ -237,4 +250,4 @@ class AI:
                 ENV_PROPERTIES = DEFAULT_ONE_SERVO_ENV_PROPERTIES
 
     # noinspection PyProtectedMember
-    PROPERTIES = _AI_PROPERTIES_FOR.SIMPLE.V1  # type: I_AI_PROPERTIES
+    PROPERTIES = _AI_PROPERTIES_FOR.SIMPLE.V5  # type: I_AI_PROPERTIES

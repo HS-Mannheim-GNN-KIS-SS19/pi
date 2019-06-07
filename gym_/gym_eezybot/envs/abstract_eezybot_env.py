@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 
 import gym
@@ -54,6 +55,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
                                             shape=(3,),
                                             dtype=env_properties.INPUT_DATA_TYPE)
         self.reward_range = (-float('inf'), float('inf'))
+        self.env_properties = env_properties
         self.action = None
         self.d_reward = None
         self.r_reward = None
@@ -63,9 +65,29 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.state = None
         self.reset()
 
+    def grab(self):
+        eezybot.base.start().rotate(
+            eezybot.base.ensure_in_bounds(eezybot.base.get_rotation() + 20))
+        eezybot.verticalArm.start().rotate(
+            eezybot.verticalArm.ensure_in_bounds(eezybot.verticalArm.get_rotation() - 20))
+        eezybot.horizontalArm.start().rotate(
+            eezybot.horizontalArm.ensure_in_bounds(eezybot.horizontalArm.get_rotation() + 80))
+        eezybot.clutch.start().grab().wait()
+        eezybot.base.rotate_relative(1).finish_and_shutdown()
+        eezybot.verticalArm.to_default().finish_and_shutdown()
+        eezybot.horizontalArm.rotate_relative(0.5).finish_and_shutdown()
+        eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
+                                      eezybot.horizontalArm).release().finish_and_shutdown()
+
     # TODO add reward for success
     def _is_episode_over(self, new_state, rotation_successful):
         if new_state == (0, 0, 0) or not rotation_successful:
+            return True
+        GRID = AI.PROPERTIES.ENV_PROPERTIES.INPUT_GRID_RADIUS
+        print(vector_length(new_state[0:2]))
+        if new_state[2] > 0.33 * GRID:
+            print("SUCCESSS!!!")
+            self.grab()
             return True
         return False
 
@@ -108,10 +130,11 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful = self._take_action(action)
         old_state = self.state
         eezybot.join()
-        self.action = action
         self.state = get_state()
-        self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         episode_over = self._is_episode_over(self.state, rotation_successful)
+        self.action = action
+        self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
+        eezybot.join()
         return self.state, self.reward, episode_over, {}
 
     def reset(self):

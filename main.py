@@ -63,11 +63,4 @@ if __name__ == '__main__':
 
     for _ in range(1):
         ai_interface.go_to_marble(train, new)
-        eezybot.clutch.start().grab().wait()
-        eezybot.base.start().rotate_relative(1).finish_and_shutdown()
-        eezybot.verticalArm.start().to_default().finish_and_shutdown()
-        eezybot.horizontalArm.start().rotate_relative(0.5).finish_and_shutdown()
-        eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
-                                      eezybot.horizontalArm).release().finish_and_shutdown()
-        eezybot.join()
         new = False

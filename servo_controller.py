@@ -56,14 +56,14 @@ class AlreadyStartedException(Exception):
     pass
 
 
-def ensure_in_bounds(angle):
+def ensure_in_bounds(angle, min_degree, max_degree):
     """
         Ensures the Servos current rotation is in Bounds (min: 0, max: 180)
     """
-    if angle < 0:
-        return 0
-    elif angle > 180:
-        return 180
+    if angle < min_degree:
+        return min_degree
+    elif angle > max_degree:
+        return max_degree
     else:
         return angle
 
@@ -211,7 +211,7 @@ class Servo:
 
         :param value: offset to be applied to the current angle
         """
-        self.rotate(ensure_in_bounds(self.get_rotation()) + value)
+        self.rotate(ensure_in_bounds(self.get_rotation(), self.min_degree, self.max_degree) + value)
         return self
 
     """-----------------------------WAIT----------------------------------------------------"""
@@ -288,7 +288,7 @@ class Servo:
             _kit.servo[self.__channel_number].angle = degree
             time.sleep(SERVO.STEP.TIME)
 
-        cur_angle = ensure_in_bounds(_kit.servo[self.__channel_number].angle)
+        cur_angle = ensure_in_bounds(_kit.servo[self.__channel_number].angle, self.min_degree, self.max_degree)
         delta = angle - cur_angle
 
         # divide delta in steps which will be added on the current angle until the destined angle is reached
@@ -329,6 +329,9 @@ class Servo:
             return self.__rotation_controller_thread.is_alive()
         else:
             return False
+
+    def ensure_in_bounds(self, degree):
+        return ensure_in_bounds(degree, self.min_degree, self.max_degree)
 
 
 class ServoController:

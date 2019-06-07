@@ -10,7 +10,13 @@ def vector_length(vector):
 
 
 def distance_reward(old_state, new_state):
-    return -(vector_length(new_state) - vector_length(old_state))
+    old = []
+    new = []
+    old.append(old_state[0])
+    old.append(old_state[1]*2)
+    new.append(new_state[0])
+    new.append(new_state[1]*2)
+    return -(vector_length(new) - vector_length(old))
 
 
 def radius_reward(old_r, new_r):
@@ -20,6 +26,9 @@ def radius_reward(old_r, new_r):
 def resolve_rewards(old_state, new_state, rotation_successful):
     if new_state == (0, 0, 0) or not rotation_successful:
         return REWARD.FOR_FAILING
+    GRID_RADIUS = AI.PROPERTIES.ENV_PROPERTIES.INPUT_GRID_RADIUS
+    if new_state[2] > 0.33 * GRID_RADIUS:
+        return REWARD.FOR_SUCCESS
     d_reward = distance_reward(old_state[0:2], new_state[0:2])
     r_reward = radius_reward(old_state[2], new_state[2])
     reward = d_reward * REWARD.DISTANCE_MULTIPLIER + r_reward * REWARD.RADIUS_MULTIPLIER

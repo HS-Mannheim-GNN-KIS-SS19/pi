@@ -46,7 +46,8 @@ class _EezybotKeyListener(ServoKeyListener):
         def print_rewards(self):
             old_state = self.state
             self.state = get_state()
-            print(reward_calculation.resolve_rewards(old_state, self.state, True))
+            print("State: {}".format(self.state))
+            print("Rewards: {}".format(reward_calculation.resolve_rewards(old_state, self.state, True)))
 
         def step_up(self, servo):
             super().step_up(servo)
