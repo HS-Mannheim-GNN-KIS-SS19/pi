@@ -3,8 +3,7 @@ import sys
 import gym
 from gym.envs.registration import register
 
-import ai_interface
-from eezybot_controller import eezybot
+from ai.ai import EezybotDQN
 
 
 def register_env():
@@ -60,7 +59,4 @@ if __name__ == '__main__':
 
     print('registering env...')
     register_env()
-
-    for _ in range(1):
-        ai_interface.go_to_marble(train, new)
-        new = False
+    EezybotDQN(do_training=train, create_new=new)

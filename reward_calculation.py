@@ -2,7 +2,8 @@ import numpy as np
 
 from constants import AI
 
-REWARD = AI.PROPERTIES.REWARD
+reward_properties = AI.properties.reward
+env_properties = AI.properties.env
 
 
 def vector_length(vector):
@@ -12,24 +13,23 @@ def vector_length(vector):
 def distance_reward(old_state, new_state):
     old = []
     new = []
-    old.append(old_state[0])
-    old.append(old_state[1])
-    new.append(new_state[0])
-    new.append(new_state[1])
+    old.append(old_state[0] * reward_properties.multiplier.x)
+    old.append(old_state[1] * reward_properties.multiplier.y)
+    new.append(new_state[0] * reward_properties.multiplier.x)
+    new.append(new_state[1] * reward_properties.multiplier.y)
     return -(vector_length(new) - vector_length(old))
 
 
 def radius_reward(old_r, new_r):
-    return new_r - old_r
+    return new_r * reward_properties.multiplier.radius - old_r * reward_properties.multiplier.radius
 
 
 def resolve_rewards(old_state, new_state, rotation_successful):
     if new_state == (0, 0, 0) or not rotation_successful or new_state[1] < 30:
-        return REWARD.FOR_FAILING
-    GRID_RADIUS = AI.PROPERTIES.ENV_PROPERTIES.INPUT_GRID_RADIUS
-    if new_state[2] > 0.18 * GRID_RADIUS:
-        return REWARD.FOR_SUCCESS
+        return reward_properties.for_failing
+    if env_properties.check_for_success_func():
+        return reward_properties.for_success
     d_reward = distance_reward(old_state[0:2], new_state[0:2])
     r_reward = radius_reward(old_state[2], new_state[2])
-    reward = d_reward * REWARD.DISTANCE_MULTIPLIER + r_reward * REWARD.RADIUS_MULTIPLIER
+    reward = d_reward + r_reward
     return reward, d_reward, r_reward

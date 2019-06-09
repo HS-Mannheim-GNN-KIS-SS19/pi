@@ -6,8 +6,7 @@ import imutils
 import numpy as np
 from imutils import contours
 
-EXECUTE_IN_PYTHON2 = False
-USE_IMAGE_NOT_CAMERA = False
+from constants import IMAGE_PROCESSING
 
 
 def _find_marbles(image, color_lower, color_upper):
@@ -31,7 +30,7 @@ def _find_marbles(image, color_lower, color_upper):
     detected_marbles = []
     for cont in conts:
         ((x, y), radius) = cv2.minEnclosingCircle(cont)
-        if radius < 7:
+        if radius < IMAGE_PROCESSING.MIN_RADIUS:
             continue
         x, y, radius = int(x), int(y), int(radius)
         cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
@@ -42,7 +41,7 @@ def _find_marbles(image, color_lower, color_upper):
 
 
 def _main(color_lower, color_upper):
-    if USE_IMAGE_NOT_CAMERA:
+    if IMAGE_PROCESSING.USE_IMAGE_NOT_CAMERA:
         image = cv2.imread('images/pitest.jpg')
     else:
         import raspi_camera
@@ -56,7 +55,7 @@ def _main(color_lower, color_upper):
 
 
 def detect(color_lower, color_upper):
-    if EXECUTE_IN_PYTHON2:
+    if IMAGE_PROCESSING.EXECUTE_IN_PYTHON2:
         python = 'python2'
         cmdLine = [python, 'image_processing.py', '"' + str(color_lower) + '"', '"' + str(color_upper) + '"']
         completed_process = subprocess.run(cmdLine)

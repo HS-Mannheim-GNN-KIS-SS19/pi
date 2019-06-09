@@ -1,7 +1,7 @@
-from constants import AI, DEFAULT_SIMPLE_ENV_PROPERTIES
+from constants import AI
 from gym_.gym_eezybot.envs.abstract_eezybot_env import AbstractEezybotEnv
 
-PROPERTIES = AI.PROPERTIES.ENV_PROPERTIES
+env_properties = AI.properties.env
 
 
 class SimpleEezybotEnv(AbstractEezybotEnv):
@@ -12,24 +12,15 @@ class SimpleEezybotEnv(AbstractEezybotEnv):
     """
 
     def _map_action_to_angle_offset_tuple(self):
-        actions = []
-        for i in range(PROPERTIES.STEP_RANGE):
-            actions.append((-1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.BASE, 0, 0))
-            actions.append((1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.BASE, 0, 0))
-            actions.append((0, -1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.VERTICAL, 0))
-            actions.append((0, 1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.VERTICAL, 0))
-            actions.append((0, 0, -1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.HORIZONTAL))
-            actions.append((0, 0, 1 * (i + 1) * PROPERTIES.STEP_SIZE_OF.HORIZONTAL))
-        return actions
+        return [(-env_properties.step_size.base, 0, 0),
+                (env_properties.step_size.base, 0, 0),
+                (0, -env_properties.step_size.vertical, 0),
+                (0, env_properties.step_size.vertical, 0),
+                (0, 0, -env_properties.step_size.horizontal),
+                (0, 0, env_properties.step_size.horizontal)]
 
     def __init__(self):
-        # noinspection PyTypeChecker
-        if not issubclass(PROPERTIES, DEFAULT_SIMPLE_ENV_PROPERTIES):
-            raise TypeError("Current ENV Properties are not matching required Properties for SimpleEezybotEnv. "
-                            "The Properties should extend or be SIMPLE_ENV_PROPERTIES")
-        if PROPERTIES.ACTION_SPACE_SIZE != 6 * PROPERTIES.STEP_RANGE:
+        if env_properties.action_space_size != 6:
             raise TypeError(
-                "Action Space is not matching. Current {}, Required: {}".format(PROPERTIES.ACTION_SPACE_SIZE,
-                                                                                6 * PROPERTIES.STEP_RANGE))
-        # noinspection PyTypeChecker
-        AbstractEezybotEnv.__init__(self, PROPERTIES)
+                "Action Space is not matching. Current {}, Required: {}".format(env_properties.action_space_size, 6))
+        AbstractEezybotEnv.__init__(self, env_properties)

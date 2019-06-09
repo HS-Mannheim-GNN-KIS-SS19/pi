@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 import gym
 from gym import spaces
 
-from constants import I_ENV_PROPERTIES
+from constants import EnvProperties
 from eezybot_controller import eezybot
-from image_processing_interface import get_state
+from image_processing import detect
 from reward_calculation import *
 from servo_controller import OutOfBoundsException
 
@@ -20,7 +20,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         pass
 
     @abstractmethod
-    def __init__(self, env_properties: I_ENV_PROPERTIES):
+    def __init__(self, env_properties: EnvProperties):
         """The main OpenAI Gym class. It encapsulates an environment with
          arbitrary behind-the-scenes dynamics. An environment can be
          partially or fully observed.
@@ -47,12 +47,12 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.max_distance_to_eezybot = float('inf')
 
         # Should be 27 actions: 3 servos ^ 3 actions
-        self.action_space = spaces.Discrete(env_properties.ACTION_SPACE_SIZE)
+        self.action_space = spaces.Discrete(env_properties.action_space_size)
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
-        self.observation_space = spaces.Box(-env_properties.INPUT_DATA_TYPE(env_properties.INPUT_GRID_RADIUS),
-                                            env_properties.INPUT_DATA_TYPE(env_properties.INPUT_GRID_RADIUS),
+        self.observation_space = spaces.Box(-env_properties.input_data_type(env_properties.input_grid_radius),
+                                            env_properties.input_data_type(env_properties.input_grid_radius),
                                             shape=(3,),
-                                            dtype=env_properties.INPUT_DATA_TYPE)
+                                            dtype=env_properties.input_data_type)
         self.reward_range = (-float('inf'), float('inf'))
         self.env_properties = env_properties
         self.action = None
@@ -79,9 +79,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
     def _is_episode_over(self, new_state, rotation_successful):
         if new_state == (0, 0, 0) or not rotation_successful or new_state[1] < 30:
             return True
-        GRID = AI.PROPERTIES.ENV_PROPERTIES.INPUT_GRID_RADIUS
-        print(vector_length(new_state[0:2]))
-        if new_state[2] > 0.18 * GRID:
+        if env_properties.check_for_success_func():
             print("SUCCESSS!!!")
             self.grab()
             return True
@@ -111,6 +109,26 @@ class AbstractEezybotEnv(gym.Env, ABC):
         eezybot.start().finish_and_shutdown()
         return rotation_successful
 
+    def get_state(self):
+        map = detect(*env_properties.target_color_space)
+        marbles = map["marbles"]
+
+        if marbles is None or len(marbles) == 0:
+            return tuple([0, 0, 0])
+
+        biggest = marbles[0]
+        for i in range(len(marbles)):
+            if marbles[i][2] > biggest[2]:
+                biggest = marbles[i]
+
+        scale = 2.0 / map["shape"][0]
+        return tuple(
+            [env_properties.input_data_type(
+                (round(x * env_properties.input_grid_radius * scale + 1.0))) for x in biggest])
+
+    if __name__ == '__main__':
+        print(get_state())
+
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -129,7 +147,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful = self._take_action(action)
         old_state = self.state
         eezybot.join()
-        self.state = get_state()
+        self.state = self.get_state()
         episode_over = self._is_episode_over(self.state, rotation_successful)
         self.action = action
         self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
@@ -143,7 +161,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
          """
 
         eezybot.start().to_default_and_shutdown().join()
-        self.state = get_state()
+        self.state = self.get_state()
         return self.state
 
     def render(self, mode='human', close=False):
@@ -170,8 +188,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
 
         print("current state: {}".format(self.state))
         print("Action: {}".format(self.action_tuples[self.action]))
-        print("{} = d_reward: {} + r_reward: {}".format(self.reward, self.d_reward * REWARD.DISTANCE_MULTIPLIER,
-                                                        self.r_reward * REWARD.RADIUS_MULTIPLIER))
+        print("{} = d_reward: {} + r_reward: {}".format(self.reward, self.d_reward, self.r_reward))
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.

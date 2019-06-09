@@ -1,5 +1,5 @@
 """----------------------------------------CONTROLLER--------------------------------------------"""
-from abc import ABC
+from typing import Callable
 
 import numpy
 
@@ -46,73 +46,17 @@ class EEZYBOT_CONTROLLER:
         RESOLVE_REWARDS = True
 
 
-"""----------------------------------------REWARD--------------------------------------------"""
+"""----------------------------------------IMAGE PROCESSING--------------------------------------------"""
 
 
-class DEFAULT_REWARD:
-    DISTANCE_MULTIPLIER = 1
-    RADIUS_MULTIPLIER = 1
-    _fail = -1000
-    FOR_FAILING = [_fail, _fail, _fail]
-    _success = 10000
-    FOR_SUCCESS = [_success, _success, _success]
+class ColorSpace:
+    blue = [(195, 30, 0), (270, 100, 100)]
 
 
-"""----------------------------------------ENV--------------------------------------------"""
-
-
-class I_ENV_PROPERTIES(ABC):
-    """
-        These Properties must be implemented in any Env Properties Class
-
-        :not implemented: STEP_RANGE
-        :not implemented: INPUT_GRID_RADIUS
-        :not implemented: ACTION_SPACE_SIZE
-
-    """
-    INPUT_DATA_TYPE = NotImplemented  # type: numpy.int8 or numpy.int16 or numpy.int32 or numpy.float32 or numpy.float64
-    INPUT_GRID_RADIUS = NotImplemented  # type: int
-    SINGLE_SERVO_ACTION_SPACE = NotImplemented  # type: int
-    ACTION_SPACE_SIZE = NotImplemented  # type: int
-    STEP_RANGE = NotImplemented  # type: int
-
-    class STEP_SIZE_OF:
-        BASE = NotImplemented  # type: int
-        VERTICAL = NotImplemented  # type: int
-        HORIZONTAL = NotImplemented  # type: int
-
-
-class _SHARED(I_ENV_PROPERTIES, ABC):
-    """
-        These Properties are shared among different Env's.
-        Env Properties inheriting from this Class may override specific Properties
-        Env Properties inheriting from this Class must override ACTION_SPACE_SIZE
-
-        :not implemented: ACTION_SPACE_SIZE
-    """
-    STEP_RANGE = 1
-    INPUT_DATA_TYPE = numpy.int8
-    INPUT_GRID_RADIUS = 100
-
-    class STEP_SIZE_OF:
-        BASE = 5
-        VERTICAL = 20
-        HORIZONTAL = 20
-
-
-class DEFAULT_COMPLEX_ENV_PROPERTIES(_SHARED):
-    SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2 + 1
-    ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE ** 3
-
-
-class DEFAULT_ONE_SERVO_ENV_PROPERTIES(_SHARED):
-    SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2
-    ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE
-
-
-class DEFAULT_SIMPLE_ENV_PROPERTIES(_SHARED):
-    SINGLE_SERVO_ACTION_SPACE = _SHARED.STEP_RANGE * 2
-    ACTION_SPACE_SIZE = SINGLE_SERVO_ACTION_SPACE * 3
+class IMAGE_PROCESSING:
+    MIN_RADIUS = 20
+    EXECUTE_IN_PYTHON2 = False
+    USE_IMAGE_NOT_CAMERA = False
 
 
 """----------------------------------------AI--------------------------------------------"""
@@ -123,156 +67,127 @@ def weights_path_by_qualname(qualname, find):
         str(qualname)[str(qualname).rfind(find) + len(find) + 1:].lower().replace(".", "_"))
 
 
-class I_AI_PROPERTIES(ABC):
-    """
-        These Properties must be implemented in any AI Properties Class
-    """
-    ENV_NAME = NotImplemented  # type: str
-    WEIGHTS_PATH = NotImplemented  # type: str
-    WARM_UP_STEPS = NotImplemented  # type: int
-    ENTRY_STEPS_FOR_NEW_AI = NotImplemented  # type: int
-    ENTRY_EPSILON_FOR_NEW_AI = NotImplemented  # type: int
-    STEPS = NotImplemented  # type: int
-    EPSILON = NotImplemented  # type: float
-    LEARN_RATE = NotImplemented  # type: float
-    TEST_EPISODES = NotImplemented  # type: int
-    LAYER_SIZES = NotImplemented  # type: [int] # lenght: HIDDEN_LAYER_AMOUNT
-    ENV_PROPERTIES = NotImplemented  # type: I_ENV_PROPERTIES
-
-    class REWARD:
-        DISTANCE_MULTIPLIER = NotImplemented  # type: int
-        RADIUS_MULTIPLIER = NotImplemented  # type: int
-        FOR_FAILING = NotImplemented  # type: int
-        FOR_SUCCESS = NotImplemented  # type: int
+class TrainingPhase:
+    def __init__(self, warm_up_steps: int, steps: int, epsilon: float, learn_rate: float):
+        self.warm_up_steps = warm_up_steps
+        self.steps = steps
+        self.epsilon = epsilon
+        self.learn_rate = learn_rate
 
 
-class _SHARED_AI_PROPERTIES(I_AI_PROPERTIES, ABC):
-    """
-        These Properties are shared among different AI's.
-        AI Properties inheriting from this Class may override specific Properties
-        AI Properties inheriting from this Class must override NAME, PATH, LAYERSIZES, ENV_PROPERTIES
+class StateMultiplier:
+    def __init__(self, x=1, y=1, radius=1):
+        self.x = x
+        self.y = y
+        self.radius = radius
 
 
-        :not implemented: NAME
-        :not implemented: PATH
-        :not implemented: LAYERSIZES
-        :not implemented ENV_PROPERTIES
-    """
-    ENTRY_STEPS_FOR_NEW_AI = 150
-    ENTRY_EPSILON_FOR_NEW_AI = 0.4
-    WARM_UP_STEPS = 40
-    STEPS = 100
-    EPSILON = 0.2
-    LEARN_RATE = 0.001
-    REWARD = DEFAULT_REWARD
-    TEST_EPISODES = 5
+class RewardProperties:
+    def __init__(self, for_failing: int, for_success: int, state_multipliers: StateMultiplier):
+        self.for_failing = (for_failing, for_failing, for_failing)
+        self.for_success = (for_success, for_success, for_success)
+        self.multiplier = state_multipliers
+
+
+class StepSize:
+    def __init__(self, base, vertical, horizontal):
+        self.base = base
+        self.vertical = vertical
+        self.horizontal = horizontal
+
+
+class EnvType:
+    class Complex:
+        name = "ComplexEezybotEnv-v0"
+        action_space_size = 27
+
+    class Simple:
+        name = "SimpleEezybotEnv-v0"
+        action_space_size = 6
+
+    class One_servo:
+        name = "OneServoEezybotEnv-v0"
+        action_space_size = 2
+
+
+class EnvProperties:
+    def __init__(self, env_type: EnvType.Complex or EnvType.Simple or EnvType.One_servo,
+                 input_data_type: numpy.int8 or numpy.int16 or numpy.int32 or numpy.float32 or numpy.float64,
+                 input_grid_radius: int, step_sizes: StepSize,
+                 target_color_space: ColorSpace.blue,
+                 check_for_success_func: Callable[[(int, int, int)], bool]):
+        self.type_name = env_type.name
+        self.input_data_type = input_data_type
+        self.input_grid_radius = input_grid_radius
+        self.target_color_space = target_color_space
+        self.action_space_size = self.type_name.action_space_size
+        self.step_size = step_sizes
+        self.check_for_success_func = check_for_success_func
+
+
+class NetworkProperties:
+    def __init__(self, weights_path: str, hidden_layer_sizes: [int], trainings: [TrainingPhase]):
+        self.weights_path = weights_path
+        self.trainings = trainings
+        self.layers = hidden_layer_sizes
+
+
+class AiProperties:
+    def __init__(self, network_properties: NetworkProperties, env_properties: EnvProperties,
+                 reward_properties: RewardProperties):
+        self.network = network_properties  # type: NetworkProperties
+        self.env = env_properties  # type: EnvProperties
+        self.reward = reward_properties  # type: RewardProperties
+
+
+class SuccessRadiusByLightLevel:
+    @classmethod
+    def low(cls, input_grid_radius):
+        return 0.18 * input_grid_radius
+
+    @classmethod
+    def medium(cls, input_grid_radius):
+        return 0.24 * input_grid_radius
+
+    @classmethod
+    def high(cls, input_grid_radius):
+        return 0.3 * input_grid_radius
+
+    @classmethod
+    def very_high(cls, input_grid_radius):
+        return 0.4 * input_grid_radius
 
 
 class AI:
-    class _WORKING_PROPERTIES:
-        class V0(I_AI_PROPERTIES):
-            ENTRY_STEPS_FOR_NEW_AI = 150
-            ENTRY_EPSILON_FOR_NEW_AI = 0.4
-            WARM_UP_STEPS = 40
-            STEPS = 100
-            EPSILON = 0.2
-            LEARN_RATE = 0.001
-            TEST_EPISODES = 5
-            ENV_NAME = "SimpleEezybotEnv-v0"
-            WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-            LAYER_SIZES = [32, 32, 32]
+    class _Type:
+        class Complex:
+            class V0:
+                pass
 
-            class FINAL_ENV_PROPERTIES(DEFAULT_SIMPLE_ENV_PROPERTIES):
-                INPUT_DATA_TYPE = numpy.int32
-                INPUT_GRID_RADIUS = 1000
+        class Simple:
+            class V0:
+                properties = AiProperties(
+                    network_properties=NetworkProperties(
+                        weights_path=weights_path_by_qualname(__qualname__, find="_Type"),
+                        hidden_layer_sizes=[32, 32, 32],
+                        trainings=[
+                            TrainingPhase(warm_up_steps=40, steps=60, epsilon=0.6,
+                                          learn_rate=0.01),
+                            TrainingPhase(warm_up_steps=10, steps=100, epsilon=0.4,
+                                          learn_rate=0.001),
+                            TrainingPhase(warm_up_steps=10, steps=100, epsilon=0.2,
+                                          learn_rate=0.001)]),
+                    env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
+                                                 input_grid_radius=10000,
+                                                 target_color_space=ColorSpace.blue,
+                                                 step_sizes=StepSize(base=5, vertical=20, horizontal=20),
+                                                 check_for_success_func=lambda cur_state:
+                                                 cur_state[2] > SuccessRadiusByLightLevel.high(1000)),
+                    reward_properties=RewardProperties(for_failing=-1000, for_success=10000,
+                                                       state_multipliers=StateMultiplier(radius=6)))
 
-            ENV_PROPERTIES = FINAL_ENV_PROPERTIES
+        class OneServo:
+            class V0:
+                pass
 
-            class FINAL_REWARD(DEFAULT_REWARD):
-                DISTANCE_MULTIPLIER = 1
-                RADIUS_MULTIPLIER = 6
-
-            REWARD = FINAL_REWARD
-
-    class _AI_PROPERTIES_FOR:
-        class COMPLEX:
-            class V0(_SHARED_AI_PROPERTIES):
-                ENV_NAME = "ComplexEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [16, 16, 16]
-                ENV_PROPERTIES = DEFAULT_COMPLEX_ENV_PROPERTIES
-
-        class SIMPLE:
-            class V0(_SHARED_AI_PROPERTIES):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [16, 16, 16]
-                ENV_PROPERTIES = DEFAULT_SIMPLE_ENV_PROPERTIES
-
-            class V1(_SHARED_AI_PROPERTIES):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [16, 16, 16]
-
-                class V1ENV_PROPERTIES(DEFAULT_SIMPLE_ENV_PROPERTIES):
-                    INPUT_DATA_TYPE = numpy.int32
-                    INPUT_GRID_RADIUS = 1000
-
-                ENV_PROPERTIES = V1ENV_PROPERTIES
-
-                class V1REWARD(DEFAULT_REWARD):
-                    DISTANCE_MULTIPLIER = 1
-                    RADIUS_MULTIPLIER = 6
-
-                REWARD = V1REWARD
-
-            class V2(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [32, 32, 32]
-
-            class V3(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [48, 48, 48]
-
-            class V4(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [64, 64, 64]
-
-            class V5(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [64, 48, 48]
-
-            class V6(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [128, 32, 32]
-
-            class V7(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [8, 8, 8]
-
-            class V8(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [128, 64, 32]
-
-            class V9(V1):
-                ENV_NAME = "SimpleEezybotEnv-v0"
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [256, 32, 32]
-
-        class ONE_SERVO:
-            class V0(_SHARED_AI_PROPERTIES):
-                ENV_NAME = "OneServoEezybotEnv-v0"
-                LEARN_RATE = 0.01
-                WEIGHTS_PATH = weights_path_by_qualname(__qualname__, "BY_ENV")
-                LAYER_SIZES = [8, 8, 8]
-                ENV_PROPERTIES = DEFAULT_ONE_SERVO_ENV_PROPERTIES
-
-    # noinspection PyProtectedMember
-    PROPERTIES = _AI_PROPERTIES_FOR.SIMPLE.V2  # type: I_AI_PROPERTIES
+    properties = _Type.Simple.V0.properties  # type: AiProperties
