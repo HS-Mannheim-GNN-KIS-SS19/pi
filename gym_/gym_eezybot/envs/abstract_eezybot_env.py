@@ -5,7 +5,7 @@ from gym import spaces
 
 from constants import EnvProperties
 from eezybot_controller import eezybot
-from image_processing import detect
+from image_processing_interface import get_state
 from reward_calculation import *
 from servo_controller import OutOfBoundsException
 
@@ -62,25 +62,28 @@ class AbstractEezybotEnv(gym.Env, ABC):
 
         self.action_tuples = self._map_action_to_angle_offset_tuple()
         self.state = None
-        self.reset()
+        self.reset_position = None
 
     def grab(self):
         eezybot.verticalArm.start().rotate(
-            eezybot.verticalArm.ensure_in_bounds(eezybot.verticalArm.get_rotation() + 20))
-        eezybot.horizontalArm.start().rotate(eezybot.horizontalArm.max_degree)
+            eezybot.verticalArm.ensure_in_bounds(eezybot.verticalArm.get_rotation() - 30)).wait()
+        eezybot.horizontalArm.start().rotate(
+            eezybot.horizontalArm.ensure_in_bounds(eezybot.horizontalArm.get_rotation() + 50))
         eezybot.clutch.start().grab().wait()
-        eezybot.base.start().rotate_relative(1).finish_and_shutdown()
-        eezybot.verticalArm.to_default().finish_and_shutdown()
-        eezybot.horizontalArm.rotate_relative(0.5).finish_and_shutdown()
+        eezybot.verticalArm.rotate_relative(1).wait()
+        eezybot.base.start().rotate(np.random.randint(20, 160)).finish_and_shutdown()
+        eezybot.verticalArm.rotate_relative(0.2).finish_and_shutdown()
+        eezybot.horizontalArm.rotate(np.random.randint(40, 120)).finish_and_shutdown()
         eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
                                       eezybot.horizontalArm).release().finish_and_shutdown()
 
     # TODO add reward for success
-    def _is_episode_over(self, new_state, rotation_successful):
-        if new_state == (0, 0, 0) or not rotation_successful or new_state[1] < 30:
+    def _is_episode_over(self, old_state, new_state, rotation_successful):
+        if (old_state == (0, 0, 0) and new_state == (0, 0, 0)) or not rotation_successful:
             return True
-        if env_properties.check_for_success_func():
+        if env_properties.check_for_success_func(new_state):
             print("SUCCESSS!!!")
+            self.reset_position = None
             self.grab()
             return True
         return False
@@ -109,26 +112,6 @@ class AbstractEezybotEnv(gym.Env, ABC):
         eezybot.start().finish_and_shutdown()
         return rotation_successful
 
-    def get_state(self):
-        map = detect(*env_properties.target_color_space)
-        marbles = map["marbles"]
-
-        if marbles is None or len(marbles) == 0:
-            return tuple([0, 0, 0])
-
-        biggest = marbles[0]
-        for i in range(len(marbles)):
-            if marbles[i][2] > biggest[2]:
-                biggest = marbles[i]
-
-        scale = 2.0 / map["shape"][0]
-        return tuple(
-            [env_properties.input_data_type(
-                (round(x * env_properties.input_grid_radius * scale + 1.0))) for x in biggest])
-
-    if __name__ == '__main__':
-        print(get_state())
-
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -147,8 +130,8 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful = self._take_action(action)
         old_state = self.state
         eezybot.join()
-        self.state = self.get_state()
-        episode_over = self._is_episode_over(self.state, rotation_successful)
+        self.state = get_state()
+        episode_over = self._is_episode_over(old_state, self.state, rotation_successful)
         self.action = action
         self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         eezybot.join()
@@ -160,8 +143,15 @@ class AbstractEezybotEnv(gym.Env, ABC):
              observation (object): the initial observation.
          """
 
-        eezybot.start().to_default_and_shutdown().join()
-        self.state = self.get_state()
+        if self.reset_position is None:
+            eezybot.start().to_default_and_shutdown().join()
+            self.state = self.search_marble()
+        else:
+            eezybot.base.rotate(self.reset_position).start().finish_and_shutdown()
+            eezybot.verticalArm.start().to_default().finish_and_shutdown()
+            eezybot.horizontalArm.start().to_default().finish_and_shutdown()
+            eezybot.join()
+            self.state = get_state()
         return self.state
 
     def render(self, mode='human', close=False):
@@ -211,3 +201,15 @@ class AbstractEezybotEnv(gym.Env, ABC):
               this won't be true if seed=None, for example.
         """
         return [seed]
+
+    def search_marble(self):
+        state = get_state()
+        while state == (0, 0, 0):
+            if eezybot.base.get_rotation() > eezybot.base.max_degree - (env_properties.step_size.base + 2):
+                eezybot.base.start().rotate(0).finish_and_shutdown().join()
+            else:
+                eezybot.base.start().rotate(
+                    eezybot.base.ensure_in_bounds(eezybot.base.get_rotation() + 20)).finish_and_shutdown().wait().join()
+                state = get_state()
+        self.reset_position = eezybot.base.get_rotation()
+        return state

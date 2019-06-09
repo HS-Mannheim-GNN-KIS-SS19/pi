@@ -1,4 +1,5 @@
 """----------------------------------------CONTROLLER--------------------------------------------"""
+from enum import Enum
 from typing import Callable
 
 import numpy
@@ -12,14 +13,14 @@ class SERVO_CONTROLLER:
         TIME = 0.02
 
     class MANUEL_CONTROL:
-        DEFAULT_STEP_SIZE = 5
+        DEFAULT_STEP_SIZE = 20
 
 
 class EEZYBOT_CONTROLLER:
     class BASE:
         CHANNEL = 0
         MIN = 0
-        DEFAULT = 90
+        DEFAULT = 5
         MAX = 180
 
     class HORIZONTAL:
@@ -38,7 +39,7 @@ class EEZYBOT_CONTROLLER:
         CHANNEL = 3
         MIN = 0
         MAX = 180
-        DEFAULT = MAX
+        DEFAULT = MAX - 30
         GRAB = MIN
         RELEASE = MAX
 
@@ -47,10 +48,6 @@ class EEZYBOT_CONTROLLER:
 
 
 """----------------------------------------IMAGE PROCESSING--------------------------------------------"""
-
-
-class ColorSpace:
-    blue = [(195, 30, 0), (270, 100, 100)]
 
 
 class IMAGE_PROCESSING:
@@ -76,7 +73,7 @@ class TrainingPhase:
 
 
 class StateMultiplier:
-    def __init__(self, x=1, y=1, radius=1):
+    def __init__(self, x=1.0, y=1.0, radius=1.0):
         self.x = x
         self.y = y
         self.radius = radius
@@ -114,13 +111,13 @@ class EnvProperties:
     def __init__(self, env_type: EnvType.Complex or EnvType.Simple or EnvType.One_servo,
                  input_data_type: numpy.int8 or numpy.int16 or numpy.int32 or numpy.float32 or numpy.float64,
                  input_grid_radius: int, step_sizes: StepSize,
-                 target_color_space: ColorSpace.blue,
-                 check_for_success_func: Callable[[(int, int, int)], bool]):
+                 target_color_space: [(int, int, int), (int, int, int)],
+                 check_for_success_func: Callable[[int, int, int], bool]):
         self.type_name = env_type.name
         self.input_data_type = input_data_type
         self.input_grid_radius = input_grid_radius
         self.target_color_space = target_color_space
-        self.action_space_size = self.type_name.action_space_size
+        self.action_space_size = env_type.action_space_size
         self.step_size = step_sizes
         self.check_for_success_func = check_for_success_func
 
@@ -158,6 +155,44 @@ class SuccessRadiusByLightLevel:
         return 0.4 * input_grid_radius
 
 
+class Lightning:
+    class Type(Enum):
+        NATURAL = 0
+        ARTIFICIAL = 1
+
+    class Strength(Enum):
+        LOW = 0
+        HIGH = 1
+
+    def __init__(self, lightning_type: Type.NATURAL or Type.ARTIFICIAL, strength: Strength.LOW or Strength.HIGH):
+        self.type = lightning_type
+        self.strength = strength
+
+    def get_success_radius(self, input_grid_radius):
+        return {
+                   Lightning.Type.NATURAL: {
+                       Lightning.Strength.LOW: 0.125,
+                       Lightning.Strength.HIGH: 0.140
+                   },
+                   Lightning.Type.ARTIFICIAL: {
+                       Lightning.Strength.LOW: 0.125,
+                       Lightning.Strength.HIGH: 0.140
+                   }
+               }.get(self.type).get(self.strength) * input_grid_radius
+
+    def get_color_space(self):
+        return {
+            Lightning.Type.NATURAL: {
+                Lightning.Strength.LOW: [(100, 150, 0), (170, 500, 1000)],
+                Lightning.Strength.HIGH: [(100, 150, 0), (130, 500, 1000)]
+            },
+            Lightning.Type.ARTIFICIAL: {
+                Lightning.Strength.LOW: [(100, 50, 0), (170, 500, 1000)],
+                Lightning.Strength.HIGH: [(100, 50, 0), (130, 500, 1000)]
+            }
+        }.get(self.type).get(self.strength)
+
+
 class AI:
     class _Type:
         class Complex:
@@ -166,25 +201,25 @@ class AI:
 
         class Simple:
             class V0:
+                _lightning = Lightning(Lightning.Type.ARTIFICIAL, Lightning.Strength.HIGH)
                 properties = AiProperties(
                     network_properties=NetworkProperties(
                         weights_path=weights_path_by_qualname(__qualname__, find="_Type"),
                         hidden_layer_sizes=[32, 32, 32],
                         trainings=[
-                            TrainingPhase(warm_up_steps=40, steps=60, epsilon=0.6,
-                                          learn_rate=0.01),
-                            TrainingPhase(warm_up_steps=10, steps=100, epsilon=0.4,
+                            TrainingPhase(warm_up_steps=25, steps=60, epsilon=0.5,
                                           learn_rate=0.001),
-                            TrainingPhase(warm_up_steps=10, steps=100, epsilon=0.2,
+                            TrainingPhase(warm_up_steps=1, steps=500, epsilon=0.3,
                                           learn_rate=0.001)]),
                     env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
-                                                 input_grid_radius=10000,
-                                                 target_color_space=ColorSpace.blue,
-                                                 step_sizes=StepSize(base=5, vertical=20, horizontal=20),
-                                                 check_for_success_func=lambda cur_state:
-                                                 cur_state[2] > SuccessRadiusByLightLevel.high(1000)),
-                    reward_properties=RewardProperties(for_failing=-1000, for_success=10000,
-                                                       state_multipliers=StateMultiplier(radius=6)))
+                                                 input_grid_radius=1000,
+                                                 target_color_space=_lightning.get_color_space(),
+                                                 step_sizes=StepSize(base=4, vertical=20, horizontal=20),
+                                                 check_for_success_func=lambda cur_state, lightning=_lightning:
+                                                 cur_state[2] > lightning.get_success_radius(
+                                                     1000)),
+                    reward_properties=RewardProperties(for_failing=-300, for_success=10000,
+                                                       state_multipliers=StateMultiplier(x=1, y=0, radius=10)))
 
         class OneServo:
             class V0:
