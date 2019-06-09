@@ -72,12 +72,11 @@ class AbstractEezybotEnv(gym.Env, ABC):
         eezybot.clutch.start().grab().wait()
         eezybot.verticalArm.rotate_relative(1).wait()
         eezybot.base.start().rotate(np.random.randint(20, 160)).finish_and_shutdown()
-        eezybot.verticalArm.rotate_relative(0.2).finish_and_shutdown()
+        eezybot.verticalArm.rotate_relative(0.1).finish_and_shutdown()
         eezybot.horizontalArm.rotate(np.random.randint(40, 120)).finish_and_shutdown()
         eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
                                       eezybot.horizontalArm).release().finish_and_shutdown()
 
-    # TODO add reward for success
     def _is_episode_over(self, old_state, new_state, rotation_successful):
         if (old_state == (0, 0, 0) and new_state == (0, 0, 0)) or not rotation_successful:
             return True
