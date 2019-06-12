@@ -3,7 +3,7 @@ import numpy as np
 from constants import AI
 
 reward_properties = AI.properties.reward
-env_properties = AI.properties.env
+light_properties = AI.properties.light
 
 
 def vector_length(vector):
@@ -27,7 +27,7 @@ def radius_reward(old_r, new_r):
 def resolve_rewards(old_state, new_state, rotation_successful):
     if new_state == (0, 0, 0) or not rotation_successful:
         return reward_properties.for_failing
-    if env_properties.check_for_success_func(new_state):
+    if new_state[2] > light_properties.get_success_radius(1000):
         return reward_properties.for_success
     d_reward = distance_reward(old_state[0:2], new_state[0:2])
     r_reward = radius_reward(old_state[2], new_state[2])

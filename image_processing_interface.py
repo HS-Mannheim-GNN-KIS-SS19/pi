@@ -1,11 +1,12 @@
 from constants import AI
 from image_processing import detect
 
+light_properties = AI.properties.light
 env_properties = AI.properties.env
 
 
 def get_state():
-    map = detect(*env_properties.target_color_space)
+    map = detect(*light_properties.get_success_radius_by_grid_radius(env_properties.input_grid_radius))
     marbles = map["marbles"]
 
     if marbles is None or len(marbles) == 0:

@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
 
 import gym
+import numpy as np
 from gym import spaces
 
-from constants import EnvProperties
+from constants import AI
 from eezybot_controller import eezybot
 from image_processing_interface import get_state
-from reward_calculation import *
+from reward_calculation import resolve_rewards
 from servo_controller import OutOfBoundsException
+
+env_properties = AI.properties.env
+light_properties = AI.properties.light
 
 
 class AbstractEezybotEnv(gym.Env, ABC):
@@ -20,7 +24,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         pass
 
     @abstractmethod
-    def __init__(self, env_properties: EnvProperties):
+    def __init__(self):
         """The main OpenAI Gym class. It encapsulates an environment with
          arbitrary behind-the-scenes dynamics. An environment can be
          partially or fully observed.
@@ -50,7 +54,6 @@ class AbstractEezybotEnv(gym.Env, ABC):
                                             shape=(3,),
                                             dtype=env_properties.input_data_type)
         self.reward_range = (-float('inf'), float('inf'))
-        self.env_properties = env_properties
         self.action = None
         self.d_reward = None
         self.r_reward = None
@@ -74,7 +77,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
     def _is_episode_over(self, old_state, new_state, rotation_successful):
         if (old_state == (0, 0, 0) and new_state == (0, 0, 0)) or not rotation_successful:
             return True
-        if env_properties.check_for_success_func(new_state):
+        if new_state[2] > light_properties.get_success_radius(1000):
             print("SUCCESS!!!")
             self.reset_position = None
             self.grab()

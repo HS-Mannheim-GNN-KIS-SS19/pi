@@ -27,4 +27,4 @@ class ComplexEezybotEnv(AbstractEezybotEnv):
             raise TypeError(
                 "Action Space is not matching. Current {}, Required: {}".format(env_properties.action_space_size,
                                                                                 3 ** 3))
-        AbstractEezybotEnv.__init__(self, env_properties)
+        AbstractEezybotEnv.__init__(self)

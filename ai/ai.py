@@ -31,7 +31,7 @@ class EezybotDQN:
         nb_actions = env.action_space.n
 
         print('initializing DQN...')
-        # Next, we build a very simple model.
+        # Model building
         model = Sequential()
         model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
         for layer_size in network.layers:
@@ -45,8 +45,6 @@ class EezybotDQN:
                 model.load_weights(network.weights_path)
             except OSError:
                 print("No saved weights found")
-        # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
-        # even the metrics!
         memory = SequentialMemory(limit=500000, window_length=1)
         if do_training:
             for training in network.trainings:
@@ -55,9 +53,6 @@ class EezybotDQN:
                                nb_steps_warmup=training.warm_up_steps,
                                target_model_update=1e-2, policy=policy)
                 dqn.compile(Adam(lr=training.learn_rate), metrics=['mae'])
-                # Okay, now it's time to learn something! We visualize the training here for show, but this
-                # slows down training quite a lot. You can always safely abort the training prematurely using
-                # Ctrl + C.
                 train(dqn, env, training.steps)
         else:
             dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, target_model_update=1e-2)
