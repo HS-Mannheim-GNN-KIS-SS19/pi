@@ -42,10 +42,6 @@ class AbstractEezybotEnv(gym.Env, ABC):
          non-underscored versions are wrapper methods to which we may add
          functionality over time.
          """
-        # TODO: Usage?
-        self.min_distance_to_eezybot = 0
-        self.max_distance_to_eezybot = float('inf')
-
         # Should be 27 actions: 3 servos ^ 3 actions
         self.action_space = spaces.Discrete(env_properties.action_space_size)
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
@@ -65,15 +61,13 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.reset_position = None
 
     def grab(self):
-        eezybot.verticalArm.start().rotate(
-            eezybot.verticalArm.ensure_in_bounds(eezybot.verticalArm.get_rotation() - 30)).wait()
-        eezybot.horizontalArm.start().rotate(
-            eezybot.horizontalArm.ensure_in_bounds(eezybot.horizontalArm.get_rotation() + 50))
-        eezybot.clutch.start().grab().wait()
-        eezybot.verticalArm.rotate_relative(1).wait()
-        eezybot.base.start().rotate(np.random.randint(20, 160)).finish_and_shutdown()
-        eezybot.verticalArm.rotate_relative(0.1).finish_and_shutdown()
-        eezybot.horizontalArm.rotate(np.random.randint(40, 120)).finish_and_shutdown()
+        eezybot.verticalArm.start().rotate(-30).wait()
+        eezybot.horizontalArm.start().rotate(50)
+        eezybot.clutch.start().grab()
+        eezybot.verticalArm.wait_for_servo(eezybot.verticalArm, eezybot.horizontalArm).rotate_to_relative(1).wait()
+        eezybot.base.start().rotate_to(np.random.randint(20, 160)).finish_and_shutdown()
+        eezybot.verticalArm.rotate_to_relative(0.1).finish_and_shutdown()
+        eezybot.horizontalArm.rotate_to(np.random.randint(40, 120)).finish_and_shutdown()
         eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
                                       eezybot.horizontalArm).release().finish_and_shutdown()
 
@@ -81,7 +75,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         if (old_state == (0, 0, 0) and new_state == (0, 0, 0)) or not rotation_successful:
             return True
         if env_properties.check_for_success_func(new_state):
-            print("SUCCESSS!!!")
+            print("SUCCESS!!!")
             self.reset_position = None
             self.grab()
             return True
@@ -92,19 +86,19 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful = True
         try:
             if base_angle != 0:
-                eezybot.base.step(base_angle)
+                eezybot.base.rotate(base_angle)
         except OutOfBoundsException as e:
             rotation_successful = False
             print(e)
         try:
             if arm_vertical_angle != 0:
-                eezybot.verticalArm.step(arm_vertical_angle)
+                eezybot.verticalArm.rotate(arm_vertical_angle)
         except OutOfBoundsException as e:
             rotation_successful = False
             print(e)
         try:
             if arm_horizontal_angle != 0:
-                eezybot.horizontalArm.step(arm_horizontal_angle)
+                eezybot.horizontalArm.rotate(arm_horizontal_angle)
         except OutOfBoundsException as e:
             rotation_successful = False
             print(e)
@@ -143,10 +137,10 @@ class AbstractEezybotEnv(gym.Env, ABC):
          """
 
         if self.reset_position is None:
-            eezybot.start().to_default_and_shutdown().join()
+            eezybot.start().rotate_to_relative(0).finish_and_shutdown().join()
             self.state = self.search_marble()
         else:
-            eezybot.base.rotate(self.reset_position).start().finish_and_shutdown()
+            eezybot.base.start().rotate_to(self.reset_position).finish_and_shutdown()
             eezybot.verticalArm.start().to_default().finish_and_shutdown()
             eezybot.horizontalArm.start().to_default().finish_and_shutdown()
             eezybot.join()
@@ -205,10 +199,9 @@ class AbstractEezybotEnv(gym.Env, ABC):
         state = get_state()
         while state == (0, 0, 0):
             if eezybot.base.get_rotation() > eezybot.base.max_degree - (env_properties.step_size.base + 2):
-                eezybot.base.start().rotate(0).finish_and_shutdown().join()
+                eezybot.base.start().rotate_to_relative(0).finish_and_shutdown().join()
             else:
-                eezybot.base.start().rotate(
-                    eezybot.base.ensure_in_bounds(eezybot.base.get_rotation() + 20)).finish_and_shutdown().wait().join()
+                eezybot.base.start().rotate(20).finish_and_shutdown().join()
                 state = get_state()
         self.reset_position = eezybot.base.get_rotation()
         return state

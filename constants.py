@@ -8,43 +8,41 @@ import numpy
 class SERVO_CONTROLLER:
     USE_FAKE_CONTROLLER = False
 
-    class STEP:
-        SIZE = 1
-        TIME = 0.02
-
-    class MANUEL_CONTROL:
-        DEFAULT_STEP_SIZE = 20
-
 
 class EEZYBOT_CONTROLLER:
+    class MANUEL_CONTROL:
+        # Should be False if not running on pi due to use of picamera
+        RESOLVE_REWARDS = True if not SERVO_CONTROLLER.USE_FAKE_CONTROLLER else False
+
     class BASE:
         CHANNEL = 0
         MIN = 0
         DEFAULT = 5
         MAX = 180
+        STEP_TIME = 0.015
 
     class HORIZONTAL:
         CHANNEL = 1
         MIN = 0
         DEFAULT = 21
         MAX = 125
+        STEP_TIME = 0.015
 
     class VERTICAL:
         CHANNEL = 2
         MIN = 0
         MAX = 150
         DEFAULT = 129
+        STEP_TIME = 0.02
 
     class CLUTCH:
         CHANNEL = 3
         MIN = 0
         MAX = 180
         DEFAULT = MAX - 30
+        STEP_TIME = 0.02
         GRAB = MIN
         RELEASE = MAX
-
-    class MANUEL_CONTROL:
-        RESOLVE_REWARDS = True
 
 
 """----------------------------------------IMAGE PROCESSING--------------------------------------------"""

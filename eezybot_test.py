@@ -5,17 +5,17 @@ from eezybot_controller import eezybot
 
 
 def servo_test_max():
-    eezybot.base.rotate(EEZYBOT.BASE.MAX)
-    eezybot.verticalArm.rotate(EEZYBOT.VERTICAL.MAX)
-    eezybot.horizontalArm.rotate(EEZYBOT.HORIZONTAL.MAX)
-    eezybot.clutch.rotate(EEZYBOT.CLUTCH.MAX)
+    eezybot.base.rotate_to(EEZYBOT.BASE.MAX)
+    eezybot.verticalArm.rotate_to(EEZYBOT.VERTICAL.MAX)
+    eezybot.horizontalArm.rotate_to(EEZYBOT.HORIZONTAL.MAX)
+    eezybot.clutch.rotate_to(EEZYBOT.CLUTCH.MAX)
 
 
 def servo_test_min():
-    eezybot.base.rotate(EEZYBOT.BASE.MIN)
-    eezybot.verticalArm.rotate(EEZYBOT.VERTICAL.MIN)
-    eezybot.horizontalArm.rotate(EEZYBOT.HORIZONTAL.MIN)
-    eezybot.clutch.rotate(EEZYBOT.CLUTCH.MIN)
+    eezybot.base.rotate_to(EEZYBOT.BASE.MIN)
+    eezybot.verticalArm.rotate_to(EEZYBOT.VERTICAL.MIN)
+    eezybot.horizontalArm.rotate_to(EEZYBOT.HORIZONTAL.MIN)
+    eezybot.clutch.rotate_to(EEZYBOT.CLUTCH.MIN)
 
 
 def testBoth():

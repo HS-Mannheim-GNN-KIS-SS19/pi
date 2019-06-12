@@ -10,35 +10,39 @@ if EEZYBOT.MANUEL_CONTROL.RESOLVE_REWARDS:
 class _Base(Servo):
 
     def __init__(self):
-        super().__init__(EEZYBOT.BASE.CHANNEL, EEZYBOT.BASE.MIN, EEZYBOT.BASE.DEFAULT, EEZYBOT.BASE.MAX, name="Base")
+        super().__init__(EEZYBOT.BASE.CHANNEL, EEZYBOT.BASE.MIN, EEZYBOT.BASE.MAX,
+                         default_angle=EEZYBOT.BASE.DEFAULT,
+                         name="Base", step_time=EEZYBOT.BASE.STEP_TIME)
 
 
 class _ArmVertical(Servo):
 
     def __init__(self):
-        super().__init__(EEZYBOT.VERTICAL.CHANNEL, EEZYBOT.VERTICAL.MIN, EEZYBOT.VERTICAL.DEFAULT, EEZYBOT.VERTICAL.MAX,
-                         name="Vertical Arm")
+        super().__init__(EEZYBOT.VERTICAL.CHANNEL, EEZYBOT.VERTICAL.MIN, EEZYBOT.VERTICAL.MAX,
+                         default_angle=EEZYBOT.VERTICAL.DEFAULT,
+                         name="Vertical Arm", step_time=EEZYBOT.VERTICAL.STEP_TIME)
 
 
 class _ArmHorizontal(Servo):
 
     def __init__(self):
-        super().__init__(EEZYBOT.HORIZONTAL.CHANNEL, EEZYBOT.HORIZONTAL.MIN, EEZYBOT.HORIZONTAL.DEFAULT,
-                         EEZYBOT.HORIZONTAL.MAX,
-                         name="Horizontal Arm")
+        super().__init__(EEZYBOT.HORIZONTAL.CHANNEL, EEZYBOT.HORIZONTAL.MIN, EEZYBOT.HORIZONTAL.MAX,
+                         default_angle=EEZYBOT.HORIZONTAL.DEFAULT,
+                         name="Horizontal Arm", step_time=EEZYBOT.HORIZONTAL.STEP_TIME)
 
 
 class _Clutch(Servo):
 
     def __init__(self):
-        super().__init__(EEZYBOT.CLUTCH.CHANNEL, EEZYBOT.CLUTCH.MIN, EEZYBOT.CLUTCH.DEFAULT, EEZYBOT.CLUTCH.MAX,
-                         name="Clutch")
+        super().__init__(EEZYBOT.CLUTCH.CHANNEL, EEZYBOT.CLUTCH.MIN, EEZYBOT.CLUTCH.MAX,
+                         default_angle=EEZYBOT.CLUTCH.DEFAULT,
+                         name="Clutch", step_time=EEZYBOT.HORIZONTAL.STEP_TIME)
 
     def grab(self):
-        return self.rotate(EEZYBOT.CLUTCH.GRAB)
+        return self.rotate_to(EEZYBOT.CLUTCH.GRAB)
 
     def release(self):
-        return self.rotate(EEZYBOT.CLUTCH.RELEASE)
+        return self.rotate_to(EEZYBOT.CLUTCH.RELEASE)
 
 
 class _EezybotKeyListener(ServoKeyListener):
