@@ -6,7 +6,7 @@ env_properties = AI.properties.env
 
 
 def get_state():
-    map = detect(*light_properties.get_success_radius_by_grid_radius(env_properties.input_grid_radius))
+    map = detect(*light_properties.get_color_space())
     marbles = map["marbles"]
 
     if marbles is None or len(marbles) == 0:

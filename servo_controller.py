@@ -234,10 +234,10 @@ class Servo:
         :param value: offset to be applied to the current angle
         :param ensure_bounds: ensures the step stays in bounds
         """
-        rotation = self.ensure_in_bounds(self.get_rotation())
+        rotation = self.ensure_in_bounds(self.get_angle()) + value
         if ensure_bounds:
             rotation = self.ensure_in_bounds(rotation)
-        self.rotate_to(rotation + value)
+        self.rotate_to(rotation)
         return self
 
     def to_default(self):
@@ -302,7 +302,7 @@ class Servo:
                 self.__rotation_queue.task_done()
             except Empty:
                 # raised on timeout
-                # what a brilliant Exception Name...
+                # brilliant Exception Name...
                 pass
         self.__block_rotate_method = False
         self.__shutdown_rotation_controller = False
@@ -329,14 +329,16 @@ class Servo:
                 cur_angle += self.step_size
             if self.__dump_rotations:
                 return
-            perform_rotation_step_to(cur_angle)
+            _kit.servo[self.__channel_number].angle = cur_angle
+            time.sleep(self.step_time)
         if self.__dump_rotations:
             return
-        if delta % self.step_size != 0:
-            perform_rotation_step_to(cur_angle)
+        if angle != cur_angle:
+            _kit.servo[self.__channel_number].angle = angle
+            time.sleep(float(self.step_size / (abs(angle - cur_angle))) * self.step_time)
         if self.__print_rotations:
-            print("servo {} performed movement to: {}".format(self.name,
-                                                              _kit.servo[self.__channel_number].angle))
+            print("{} performed movement to: {}".format(self.name,
+                                                        _kit.servo[self.__channel_number].angle))
 
     """-----------------------------MISC----------------------------------------------------"""
 
@@ -347,7 +349,7 @@ class Servo:
         self.__dump_rotations = True
         return self
 
-    def get_rotation(self, ensure_bounds=True):
+    def get_angle(self, ensure_bounds=True):
         angle = _kit.servo[self.__channel_number].angle
         if ensure_bounds:
             return self.ensure_in_bounds(angle)
@@ -465,21 +467,11 @@ class ServoController:
 
 
 class ServoKeyListener(KeyListener):
-    @staticmethod
-    def bounds_check(angle, min_degree, max_degree):
-        if angle < min_degree:
-            return min_degree
-        elif angle > max_degree:
-            return max_degree
-        return angle
-
     def step_up(self, servo):
-        angle = servo.wait().get_rotation() + self.step_size
-        servo.rotate_to(self.bounds_check(angle, servo.min_degree, servo.max_degree))
+        servo.wait().rotate(self.step_size)
 
     def step_down(self, servo):
-        angle = servo.wait().get_rotation() - self.step_size
-        servo.rotate_to(self.bounds_check(angle, servo.min_degree, servo.max_degree))
+        servo.wait().rotate(-self.step_size)
 
     def step_size_up(self):
         self.step_size += 1
@@ -518,4 +510,4 @@ class ServoKeyListener(KeyListener):
         for servo_tuple in servo_tuples:
             func_dictionary.update(
                 {servo_tuple[1]: (self.step_up, servo_tuple[0]), servo_tuple[2]: (self.step_down, servo_tuple[0])})
-        super().__init__(func_dictionary, while_func)
+        super().__init__(func_dictionary, 0.05, while_func=while_func)

@@ -11,32 +11,32 @@ class _Base(Servo):
 
     def __init__(self):
         super().__init__(EEZYBOT.BASE.CHANNEL, EEZYBOT.BASE.MIN, EEZYBOT.BASE.MAX,
-                         default_angle=EEZYBOT.BASE.DEFAULT,
-                         name="Base", step_time=EEZYBOT.BASE.STEP_TIME)
+                         default_angle=EEZYBOT.BASE.DEFAULT, name="Base",
+                         step_size=EEZYBOT.BASE.STEP_SIZE, step_time=EEZYBOT.BASE.STEP_TIME)
 
 
 class _ArmVertical(Servo):
 
     def __init__(self):
         super().__init__(EEZYBOT.VERTICAL.CHANNEL, EEZYBOT.VERTICAL.MIN, EEZYBOT.VERTICAL.MAX,
-                         default_angle=EEZYBOT.VERTICAL.DEFAULT,
-                         name="Vertical Arm", step_time=EEZYBOT.VERTICAL.STEP_TIME)
+                         default_angle=EEZYBOT.VERTICAL.DEFAULT, name="Vertical Arm",
+                         step_size=EEZYBOT.VERTICAL.STEP_SIZE, step_time=EEZYBOT.VERTICAL.STEP_TIME)
 
 
 class _ArmHorizontal(Servo):
 
     def __init__(self):
         super().__init__(EEZYBOT.HORIZONTAL.CHANNEL, EEZYBOT.HORIZONTAL.MIN, EEZYBOT.HORIZONTAL.MAX,
-                         default_angle=EEZYBOT.HORIZONTAL.DEFAULT,
-                         name="Horizontal Arm", step_time=EEZYBOT.HORIZONTAL.STEP_TIME)
+                         default_angle=EEZYBOT.HORIZONTAL.DEFAULT, name="Horizontal Arm",
+                         step_size=EEZYBOT.HORIZONTAL.STEP_SIZE, step_time=EEZYBOT.HORIZONTAL.STEP_TIME)
 
 
 class _Clutch(Servo):
 
     def __init__(self):
         super().__init__(EEZYBOT.CLUTCH.CHANNEL, EEZYBOT.CLUTCH.MIN, EEZYBOT.CLUTCH.MAX,
-                         default_angle=EEZYBOT.CLUTCH.DEFAULT,
-                         name="Clutch", step_time=EEZYBOT.HORIZONTAL.STEP_TIME)
+                         default_angle=EEZYBOT.CLUTCH.DEFAULT, name="Clutch",
+                         step_size=EEZYBOT.CLUTCH.STEP_SIZE, step_time=EEZYBOT.HORIZONTAL.STEP_TIME)
 
     def grab(self):
         return self.rotate_to(EEZYBOT.CLUTCH.GRAB)

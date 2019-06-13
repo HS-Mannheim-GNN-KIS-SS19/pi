@@ -62,22 +62,24 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.action_tuples = self._map_action_to_angle_offset_tuple()
         self.state = None
         self.reset_position = None
+        eezybot.start()
 
     def grab(self):
-        eezybot.verticalArm.start().rotate(-30).wait()
-        eezybot.horizontalArm.start().rotate(50)
-        eezybot.clutch.start().grab()
-        eezybot.verticalArm.wait_for_servo(eezybot.verticalArm, eezybot.horizontalArm).rotate_to_relative(1).wait()
-        eezybot.base.start().rotate_to(np.random.randint(20, 160)).finish_and_shutdown()
-        eezybot.verticalArm.rotate_to_relative(0.1).finish_and_shutdown()
-        eezybot.horizontalArm.rotate_to(np.random.randint(40, 120)).finish_and_shutdown()
+        # eezybot.verticalArm.rotate(-eezybot.horizontalArm.get_rotation() / 5).wait()
+        eezybot.horizontalArm.rotate(50)
+        eezybot.clutch.grab().wait()
+        eezybot.verticalArm.rotate_to_relative(1).wait()
+        eezybot.base.rotate_to(np.random.randint(140) + 20)
+        movement = np.random.randint(25)
+        eezybot.horizontalArm.rotate_to(movement + 100)
+        eezybot.verticalArm.rotate_to(movement * 2 + 20)
         eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
-                                      eezybot.horizontalArm).release().finish_and_shutdown()
+                                      eezybot.horizontalArm).release()
 
     def _is_episode_over(self, old_state, new_state, rotation_successful):
-        if (old_state == (0, 0, 0) and new_state == (0, 0, 0)) or not rotation_successful:
+        if old_state == (0, 0, 0) and new_state == (0, 0, 0):
             return True
-        if new_state[2] > light_properties.get_success_radius(1000):
+        if new_state[2] > light_properties.get_success_radius_by_grid_radius(1000) and new_state[0] < 100:
             print("SUCCESS!!!")
             self.reset_position = None
             self.grab()
@@ -89,23 +91,22 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful = True
         try:
             if base_angle != 0:
-                eezybot.base.rotate(base_angle)
+                eezybot.base.rotate(base_angle, ensure_bounds=False)
         except OutOfBoundsException as e:
             rotation_successful = False
             print(e)
         try:
             if arm_vertical_angle != 0:
-                eezybot.verticalArm.rotate(arm_vertical_angle)
+                eezybot.verticalArm.rotate(arm_vertical_angle, ensure_bounds=False)
         except OutOfBoundsException as e:
             rotation_successful = False
             print(e)
         try:
             if arm_horizontal_angle != 0:
-                eezybot.horizontalArm.rotate(arm_horizontal_angle)
+                eezybot.horizontalArm.rotate(arm_horizontal_angle, ensure_bounds=False)
         except OutOfBoundsException as e:
             rotation_successful = False
             print(e)
-        eezybot.start().finish_and_shutdown()
         return rotation_successful
 
     def step(self, action):
@@ -125,12 +126,12 @@ class AbstractEezybotEnv(gym.Env, ABC):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
         rotation_successful = self._take_action(action)
         old_state = self.state
-        eezybot.join()
+        eezybot.wait_for_all()
         self.state = get_state()
         episode_over = self._is_episode_over(old_state, self.state, rotation_successful)
         self.action = action
         self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
-        eezybot.join()
+        eezybot.wait_for_all()
         return self.state, self.reward, episode_over, {}
 
     def reset(self):
@@ -140,13 +141,13 @@ class AbstractEezybotEnv(gym.Env, ABC):
          """
 
         if self.reset_position is None:
-            eezybot.start().rotate_to_relative(0).finish_and_shutdown().join()
-            self.state = self.search_marble()
+            eezybot.to_default().wait_for_all()
+            self.state = self._search_marble()
         else:
-            eezybot.base.start().rotate_to(self.reset_position).finish_and_shutdown()
-            eezybot.verticalArm.start().to_default().finish_and_shutdown()
-            eezybot.horizontalArm.start().to_default().finish_and_shutdown()
-            eezybot.join()
+            eezybot.base.rotate_to(self.reset_position)
+            eezybot.verticalArm.to_default()
+            eezybot.horizontalArm.to_default()
+            eezybot.wait_for_all()
             self.state = get_state()
         return self.state
 
@@ -181,7 +182,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        eezybot.start().to_default_and_shutdown(dump_rotations=True).join()
+        eezybot.to_default_and_shutdown(dump_rotations=True).wait()
 
     def seed(self, seed=None):
         """Sets the seed for this env's random number generator(s).
@@ -198,13 +199,14 @@ class AbstractEezybotEnv(gym.Env, ABC):
         """
         return [seed]
 
-    def search_marble(self):
+    def _search_marble(self):
         state = get_state()
         while state == (0, 0, 0):
-            if eezybot.base.get_rotation() > eezybot.base.max_degree - (env_properties.step_size.base + 2):
-                eezybot.base.start().rotate_to_relative(0).finish_and_shutdown().join()
-            else:
-                eezybot.base.start().rotate(20).finish_and_shutdown().join()
+            while state == (0, 0, 0) and eezybot.base.get_angle() < eezybot.base.max_degree - 20:
+                eezybot.base.rotate(40).wait()
                 state = get_state()
-        self.reset_position = eezybot.base.get_rotation()
+            while state == (0, 0, 0) and eezybot.base.get_angle() > eezybot.base.min_degree + 20:
+                eezybot.base.rotate(-40).wait()
+                state = get_state()
+        self.reset_position = eezybot.base.get_angle()
         return state

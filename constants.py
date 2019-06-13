@@ -16,30 +16,34 @@ class EEZYBOT_CONTROLLER:
     class BASE:
         CHANNEL = 0
         MIN = 0
-        DEFAULT = 5
+        DEFAULT = 20
         MAX = 180
-        STEP_TIME = 0.015
+        STEP_SIZE = 2
+        STEP_TIME = 0.02 * STEP_SIZE
 
     class HORIZONTAL:
         CHANNEL = 1
         MIN = 0
         DEFAULT = 21
         MAX = 125
-        STEP_TIME = 0.015
+        STEP_SIZE = 1
+        STEP_TIME = 0.025 * STEP_SIZE
 
     class VERTICAL:
         CHANNEL = 2
         MIN = 0
         MAX = 150
         DEFAULT = 129
-        STEP_TIME = 0.02
+        STEP_SIZE = 1
+        STEP_TIME = 0.02 * STEP_SIZE
 
     class CLUTCH:
         CHANNEL = 3
         MIN = 0
         MAX = 180
         DEFAULT = MAX - 30
-        STEP_TIME = 0.02
+        STEP_SIZE = 1
+        STEP_TIME = 0.0075 * STEP_SIZE
         GRAB = MIN
         RELEASE = MAX
 
@@ -49,7 +53,7 @@ class EEZYBOT_CONTROLLER:
 
 class IMAGE_PROCESSING:
     MIN_RADIUS = 20
-    X_OFFSET = -18
+    X_OFFSET = -28
     EXECUTE_IN_PYTHON2 = False
     USE_IMAGE_NOT_CAMERA = False
 
@@ -151,41 +155,30 @@ class NetworkProperties:
 
 
 class Light:
-    class Type(Enum):
-        NATURAL = 0
-        ARTIFICIAL = 1
+    class Intensity(float, Enum):
+        VERY_LOW = 0.110
+        LOW = 0.125
+        MEDIUM = 0.140
+        HIGH = 0.155
+        VERY_HIGH = 0.17
+        EXTREME = 0.2
 
-    class Strength(Enum):
-        LOW = 0
-        HIGH = 1
-
-    def __init__(self, lightning_type: Type.NATURAL or Type.ARTIFICIAL, strength: Strength.LOW or Strength.HIGH):
-        self.type = lightning_type
-        self.strength = strength
+    def __init__(self, intensity: Intensity):
+        self.light_intensity = intensity
 
     def get_success_radius_by_grid_radius(self, input_grid_radius):
-        return {
-                   Light.Type.NATURAL: {
-                       Light.Strength.LOW: 0.125,
-                       Light.Strength.HIGH: 0.140
-                   },
-                   Light.Type.ARTIFICIAL: {
-                       Light.Strength.LOW: 0.125,
-                       Light.Strength.HIGH: 0.140
-                   }
-               }.get(self.type).get(self.strength) * input_grid_radius
+        return self.light_intensity.value * input_grid_radius
 
     def get_color_space(self):
         return {
-            Light.Type.NATURAL: {
-                Light.Strength.LOW: [(100, 150, 0), (170, 500, 1000)],
-                Light.Strength.HIGH: [(100, 150, 0), (130, 500, 1000)]
-            },
-            Light.Type.ARTIFICIAL: {
-                Light.Strength.LOW: [(100, 50, 0), (170, 500, 1000)],
-                Light.Strength.HIGH: [(100, 50, 0), (130, 500, 1000)]
-            }
-        }.get(self.type).get(self.strength)
+            Light.Intensity.VERY_LOW: [(100, 50, 0), (170, 500, 1000)],
+            Light.Intensity.LOW: [(100, 50, 0), (170, 500, 1000)],
+            Light.Intensity.MEDIUM: [(100, 50, 0), (130, 500, 1000)],
+            Light.Intensity.HIGH: [(100, 50, 0), (130, 500, 1000)],
+            Light.Intensity.VERY_HIGH: [(100, 150, 0), (130, 500, 1000)],
+            Light.Intensity.EXTREME: [(100, 150, 0), (130, 500, 1000)]
+
+        }.get(self.light_intensity)
 
 
 class AiProperties:
@@ -195,24 +188,6 @@ class AiProperties:
         self.env = env_properties  # type: EnvProperties
         self.reward = reward_properties  # type: RewardProperties
         self.light = light
-
-
-class SuccessRadiusByLightLevel:
-    @classmethod
-    def low(cls, input_grid_radius):
-        return 0.18 * input_grid_radius
-
-    @classmethod
-    def medium(cls, input_grid_radius):
-        return 0.24 * input_grid_radius
-
-    @classmethod
-    def high(cls, input_grid_radius):
-        return 0.3 * input_grid_radius
-
-    @classmethod
-    def very_high(cls, input_grid_radius):
-        return 0.4 * input_grid_radius
 
 
 class AI:
@@ -228,8 +203,8 @@ class AI:
                         weights_path=weights_path_by_qualname(__qualname__, cut="_Type."),
                         hidden_layer_sizes=[32, 32, 32],
                         trainings=[
-                            TrainingPhase(warm_up_steps=25, steps=60, epsilon=0.5,
-                                          learn_rate=0.001),
+                            # TrainingPhase(warm_up_steps=25, steps=60, epsilon=0.5,
+                            #               learn_rate=0.001),
                             TrainingPhase(warm_up_steps=1, steps=500, epsilon=0.3,
                                           learn_rate=0.001)
                         ]),
@@ -238,11 +213,49 @@ class AI:
                                                  step_sizes=StepSize(base=4, vertical=20, horizontal=20)),
                     reward_properties=RewardProperties(for_failing=-300, for_success=10000,
                                                        state_multipliers=StateMultiplier(x=1, y=0, radius=10)),
-                    light=Light(Light.Type.ARTIFICIAL, Light.Strength.HIGH))
+                    light=Light(Light.Intensity.MEDIUM))
+
+            class V1:
+                properties = AiProperties(
+                    network_properties=NetworkProperties(
+                        weights_path=weights_path_by_qualname(__qualname__, cut="_Type."),
+                        hidden_layer_sizes=[32, 32, 32],
+                        trainings=[
+                            # TrainingPhase(warm_up_steps=25, steps=60, epsilon=0.5,
+                            #               learn_rate=0.001),
+                            TrainingPhase(warm_up_steps=1, steps=500, epsilon=0.3,
+                                          learn_rate=0.001)
+                        ]),
+                    env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
+                                                 input_grid_radius=1000,
+                                                 step_sizes=StepSize(base=4, vertical=20, horizontal=20)),
+                    reward_properties=RewardProperties(for_failing=-300, for_success=10000,
+                                                       state_multipliers=StateMultiplier(x=1.3, y=0, radius=10)),
+                    light=Light(Light.Intensity.LOW))
+
+            class V2:
+                properties = AiProperties(
+                    network_properties=NetworkProperties(
+                        weights_path=weights_path_by_qualname(__qualname__, cut="_Type."),
+                        hidden_layer_sizes=[500, 64, 64],
+                        trainings=[
+                            TrainingPhase(warm_up_steps=40, steps=120, epsilon=0.5,
+                                          learn_rate=0.003),
+                            TrainingPhase(warm_up_steps=1, steps=200, epsilon=0.3,
+                                          learn_rate=0.0015),
+                            TrainingPhase(warm_up_steps=1, steps=300, epsilon=0,
+                                          learn_rate=0.001)
+                        ]),
+                    env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
+                                                 input_grid_radius=1000,
+                                                 step_sizes=StepSize(base=4, vertical=20, horizontal=20)),
+                    reward_properties=RewardProperties(for_failing=-300, for_success=10000,
+                                                       state_multipliers=StateMultiplier(x=1.3, y=0, radius=10)),
+                    light=Light(Light.Intensity.MEDIUM))
 
         class OneServo:
             class V0:
                 pass
 
     # Currently chosen properties
-    properties = _Type.Simple.V0.properties  # type: AiProperties
+    properties = _Type.Simple.V2.properties  # type: AiProperties
