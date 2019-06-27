@@ -31,7 +31,7 @@ def _find_marbles(image, color_lower, color_upper):
         ((x, y), radius) = cv2.minEnclosingCircle(cont)
         if radius < IMAGE_PROCESSING.MIN_RADIUS:
             continue
-        x, y, radius = int(x - 128 + IMAGE_PROCESSING.X_OFFSET), int(y), int(radius)
+        x, y, radius = int(x - 128 + IMAGE_PROCESSING.X_OFFSET), int(y-127), int(radius)
         cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
         cv2.circle(image, (x, y), radius, (255, 0, 0), 2)
         detected_marbles.append((x, y, radius))

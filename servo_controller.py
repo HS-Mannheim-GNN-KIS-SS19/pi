@@ -335,7 +335,7 @@ class Servo:
             return
         if angle != cur_angle:
             _kit.servo[self.__channel_number].angle = angle
-            time.sleep(float(self.step_size / (abs(angle - cur_angle))) * self.step_time)
+            time.sleep(self.step_time)
         if self.__print_rotations:
             print("{} performed movement to: {}".format(self.name,
                                                         _kit.servo[self.__channel_number].angle))

@@ -8,7 +8,7 @@ from constants import AI
 from eezybot_controller import eezybot
 from image_processing_interface import get_state
 from reward_calculation import resolve_rewards
-from servo_controller import OutOfBoundsException
+from servo_controller import AngleTooLittleException, AngleTooBigException
 
 env_properties = AI.properties.env
 light_properties = AI.properties.light
@@ -70,9 +70,9 @@ class AbstractEezybotEnv(gym.Env, ABC):
         eezybot.clutch.grab().wait()
         eezybot.verticalArm.rotate_to_relative(1).wait()
         eezybot.base.rotate_to(np.random.randint(140) + 20)
-        movement = np.random.randint(25)
-        eezybot.horizontalArm.rotate_to(movement + 100)
-        eezybot.verticalArm.rotate_to(movement * 2 + 10)
+        movement = np.random.randint(50)
+        eezybot.horizontalArm.rotate_to_relative(1)
+        eezybot.verticalArm.rotate_to(movement + 10)
         eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
                                       eezybot.horizontalArm).release()
 
@@ -89,25 +89,41 @@ class AbstractEezybotEnv(gym.Env, ABC):
     def _take_action(self, action):
         base_angle, arm_vertical_angle, arm_horizontal_angle = self.action_tuples[action]
         rotation_successful = True
+        rotation_state = 0
         try:
             if base_angle != 0:
                 eezybot.base.rotate(base_angle, ensure_bounds=False)
-        except OutOfBoundsException as e:
+        except AngleTooBigException as e:
             rotation_successful = False
+            rotation_state = 1
+            print(e)
+        except AngleTooLittleException as e:
+            rotation_successful = False
+            rotation_state = 2
             print(e)
         try:
             if arm_vertical_angle != 0:
                 eezybot.verticalArm.rotate(arm_vertical_angle, ensure_bounds=False)
-        except OutOfBoundsException as e:
+        except AngleTooBigException as e:
             rotation_successful = False
+            rotation_state = 3
+            print(e)
+        except AngleTooLittleException as e:
+            rotation_successful = False
+            rotation_state = 4
             print(e)
         try:
             if arm_horizontal_angle != 0:
                 eezybot.horizontalArm.rotate(arm_horizontal_angle, ensure_bounds=False)
-        except OutOfBoundsException as e:
+        except AngleTooBigException as e:
             rotation_successful = False
+            rotation_state = 5
             print(e)
-        return rotation_successful
+        except AngleTooLittleException as e:
+            rotation_successful = False
+            rotation_state = 6
+            print(e)
+        return rotation_successful, rotation_state
 
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
@@ -124,7 +140,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         """
 
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
-        rotation_successful = self._take_action(action)
+        rotation_successful, rotation_state = self._take_action(action)
         old_state = self.state
         eezybot.wait_for_all()
         self.state = get_state()
@@ -132,7 +148,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.action = action
         self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         eezybot.wait_for_all()
-        return self.state + ((0,) if rotation_successful else (1,)), self.reward, episode_over, {}
+        return self.state + (rotation_state,), self.reward, episode_over, {}
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
