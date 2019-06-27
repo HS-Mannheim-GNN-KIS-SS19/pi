@@ -51,7 +51,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         # A R^n space which describes all valid inputs our model knows (x, y, radius)
         self.observation_space = spaces.Box(-env_properties.input_data_type(env_properties.input_grid_radius),
                                             env_properties.input_data_type(env_properties.input_grid_radius),
-                                            shape=(3,),
+                                            shape=(4,),
                                             dtype=env_properties.input_data_type)
         self.reward_range = (-float('inf'), float('inf'))
         self.action = None
@@ -72,14 +72,14 @@ class AbstractEezybotEnv(gym.Env, ABC):
         eezybot.base.rotate_to(np.random.randint(140) + 20)
         movement = np.random.randint(25)
         eezybot.horizontalArm.rotate_to(movement + 100)
-        eezybot.verticalArm.rotate_to(movement * 2 + 20)
+        eezybot.verticalArm.rotate_to(movement * 2 + 10)
         eezybot.clutch.wait_for_servo(eezybot.base, eezybot.verticalArm,
                                       eezybot.horizontalArm).release()
 
     def _is_episode_over(self, old_state, new_state, rotation_successful):
         if old_state == (0, 0, 0) and new_state == (0, 0, 0):
             return True
-        if new_state[2] > light_properties.get_success_radius_by_grid_radius(1000) and new_state[0] < 100:
+        if new_state[2] > light_properties.get_success_radius_by_grid_radius(1000) and -100 < new_state[0] < 100:
             print("SUCCESS!!!")
             self.reset_position = None
             self.grab()
@@ -132,7 +132,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         self.action = action
         self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         eezybot.wait_for_all()
-        return self.state, self.reward, episode_over, {}
+        return self.state + ((0,) if rotation_successful else (1,)), self.reward, episode_over, {}
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
@@ -149,7 +149,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
             eezybot.horizontalArm.to_default()
             eezybot.wait_for_all()
             self.state = get_state()
-        return self.state
+        return self.state + (0,)
 
     def render(self, mode='human', close=False):
         """Renders the environment.

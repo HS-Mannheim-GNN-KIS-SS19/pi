@@ -10,8 +10,8 @@ from constants import IMAGE_PROCESSING
 
 
 def _find_marbles(image, color_lower, color_upper):
-    if image.shape != (256, 256, 3):
-        image = cv2.resize(image, (256, 256))
+    if image.shape != (512, 512, 3):
+        image = cv2.resize(image, (512, 512))
 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 

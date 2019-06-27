@@ -17,7 +17,7 @@ def train(dqn, env, steps):
     dqn.fit(env, nb_steps=steps, visualize=True, verbose=2)
 
     # After training is done, we save the final weights.
-    dqn.save_weights(network.weights_path, overwrite=True)
+    dqn.save_weights(network.weights_path[0] + str(network.weights_path[1] + 1) + '.h5f', overwrite=True)
     print("saved weights")
 
 
@@ -42,7 +42,7 @@ class EezybotDQN:
         print(model.summary())
         if not create_new:
             try:
-                model.load_weights(network.weights_path)
+                model.load_weights(network.weights_path[0] + str(network.weights_path[1]) + '.h5f')
             except OSError:
                 print("No saved weights found")
         memory = SequentialMemory(limit=500000, window_length=1)

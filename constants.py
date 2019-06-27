@@ -39,7 +39,7 @@ class EEZYBOT_CONTROLLER:
 
     class CLUTCH:
         CHANNEL = 3
-        MIN = 0
+        MIN = 35
         MAX = 180
         DEFAULT = MAX - 30
         STEP_SIZE = 1
@@ -53,7 +53,7 @@ class EEZYBOT_CONTROLLER:
 
 class IMAGE_PROCESSING:
     MIN_RADIUS = 20
-    X_OFFSET = -28
+    X_OFFSET = -30
     EXECUTE_IN_PYTHON2 = False
     USE_IMAGE_NOT_CAMERA = False
 
@@ -61,15 +61,24 @@ class IMAGE_PROCESSING:
 """----------------------------------------AI--------------------------------------------"""
 
 
-def weights_path_by_qualname(qualname: str, cut: str) -> str:
+def weights_path_by_qualname(qualname: str, cut: str) -> (str, int):
     """
 
     :param qualname: classpath
     :param cut: string to be where a cut should be performed in qualname
-    :return: str
+    :return: (str, int)
     """
-    return 'weights_of_{}.h5f'.format(
+    import os
+    path = 'weights_of_{}/'.format(
         str(qualname)[str(qualname).rfind(cut) + len(cut):].lower().replace(".", "_"))
+    cur = '0.h5f'
+    try:
+        for elem in os.listdir(path):
+            if cur < elem:
+                cur = elem
+    except FileNotFoundError:
+        os.makedirs(path)
+    return path + '/', int(cur[0])
 
 
 class TrainingPhase:
@@ -148,7 +157,7 @@ class EnvProperties:
 
 
 class NetworkProperties:
-    def __init__(self, weights_path: str, hidden_layer_sizes: [int], trainings: [TrainingPhase]):
+    def __init__(self, weights_path: (str, int), hidden_layer_sizes: [int], trainings: [TrainingPhase]):
         self.weights_path = weights_path
         self.trainings = trainings
         self.layers = hidden_layer_sizes
@@ -239,23 +248,43 @@ class AI:
                         weights_path=weights_path_by_qualname(__qualname__, cut="_Type."),
                         hidden_layer_sizes=[500, 64, 64],
                         trainings=[
-                            TrainingPhase(warm_up_steps=40, steps=120, epsilon=0.5,
-                                          learn_rate=0.003),
-                            TrainingPhase(warm_up_steps=1, steps=200, epsilon=0.3,
-                                          learn_rate=0.0015),
-                            TrainingPhase(warm_up_steps=1, steps=300, epsilon=0,
+                            # TrainingPhase(warm_up_steps=40, steps=120, epsilon=0.5,
+                            #               learn_rate=0.003),
+                            # TrainingPhase(warm_up_steps=1, steps=250, epsilon=0.3,
+                            #               learn_rate=0.0015),
+                            TrainingPhase(warm_up_steps=1, steps=300, epsilon=0.2,
                                           learn_rate=0.001)
                         ]),
                     env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
                                                  input_grid_radius=1000,
                                                  step_sizes=StepSize(base=4, vertical=20, horizontal=20)),
                     reward_properties=RewardProperties(for_failing=-300, for_success=10000,
-                                                       state_multipliers=StateMultiplier(x=1.3, y=0, radius=10)),
-                    light=Light(Light.Intensity.MEDIUM))
+                                                       state_multipliers=StateMultiplier(x=2, y=0, radius=10)),
+                    light=Light(Light.Intensity.VERY_HIGH))
+
+            class V3:
+                properties = AiProperties(
+                    network_properties=NetworkProperties(
+                        weights_path=weights_path_by_qualname(__qualname__, cut="_Type."),
+                        hidden_layer_sizes=[500, 64, 64],
+                        trainings=[
+                            TrainingPhase(warm_up_steps=40, steps=150, epsilon=0.5,
+                                          learn_rate=0.003),
+                            TrainingPhase(warm_up_steps=1, steps=350, epsilon=0.35,
+                                          learn_rate=0.0015),
+                            TrainingPhase(warm_up_steps=1, steps=300, epsilon=0.2,
+                                          learn_rate=0.001)
+                        ]),
+                    env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
+                                                 input_grid_radius=1000,
+                                                 step_sizes=StepSize(base=3, vertical=20, horizontal=20)),
+                    reward_properties=RewardProperties(for_failing=-300, for_success=10000,
+                                                       state_multipliers=StateMultiplier(x=2, y=0, radius=10)),
+                    light=Light(Light.Intensity.HIGH))
 
         class OneServo:
             class V0:
                 pass
 
     # Currently chosen properties
-    properties = _Type.Simple.V2.properties  # type: AiProperties
+    properties = _Type.Simple.V3.properties  # type: AiProperties
