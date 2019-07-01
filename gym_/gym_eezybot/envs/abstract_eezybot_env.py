@@ -65,7 +65,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
         eezybot.start()
 
     def grab(self):
-        # eezybot.verticalArm.rotate(-eezybot.horizontalArm.get_rotation() / 5).wait()
+        eezybot.verticalArm.rotate(-10).wait()
         eezybot.horizontalArm.rotate(50)
         eezybot.clutch.grab().wait()
         eezybot.verticalArm.rotate_to_relative(1).wait()
@@ -79,7 +79,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
     def _is_episode_over(self, old_state, new_state, rotation_successful):
         if old_state == (0, 0, 0) and new_state == (0, 0, 0):
             return True
-        if new_state[2] > light_properties.get_success_radius_by_grid_radius(1000) and -100 < new_state[0] < 100:
+        if new_state[2] > light_properties.get_success_radius_by_grid_radius(1000) and -300 < new_state[0] < 300:
             print("SUCCESS!!!")
             self.reset_position = None
             self.grab()

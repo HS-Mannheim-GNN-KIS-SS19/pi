@@ -57,4 +57,5 @@ class EezybotDQN:
         else:
             dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, target_model_update=1e-2)
             # Evaluate our algorithm for 5 episodes.
+            dqn.compile(Adam(), metrics=['mae'])
             dqn.test(env, nb_episodes=5, visualize=True)

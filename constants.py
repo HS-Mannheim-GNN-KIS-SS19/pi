@@ -328,9 +328,9 @@ class AI:
                         trainings=[
                             #TrainingPhase(warm_up_steps=40, steps=150, epsilon=0.5,
                              #             learn_rate=0.003),
-                            TrainingPhase(warm_up_steps=1, steps=700, epsilon=0.35,
-                                          learn_rate=0.0015),
-                            TrainingPhase(warm_up_steps=1, steps=300, epsilon=0.2,
+                            #TrainingPhase(warm_up_steps=40, steps=700, epsilon=0.35,
+                             #             learn_rate=0.0015),
+                            TrainingPhase(warm_up_steps=40, steps=300, epsilon=0.2,
                                           learn_rate=0.001)
                         ]),
                     env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
