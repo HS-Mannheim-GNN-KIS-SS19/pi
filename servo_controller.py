@@ -314,10 +314,6 @@ class Servo:
         :flag self.__dump_rotations: cancel performed rotation
         """
 
-        def perform_rotation_step_to(degree):
-            _kit.servo[self.__channel_number].angle = degree
-            time.sleep(self.step_time)
-
         cur_angle = self.ensure_in_bounds(_kit.servo[self.__channel_number].angle)
         delta = angle - cur_angle
 

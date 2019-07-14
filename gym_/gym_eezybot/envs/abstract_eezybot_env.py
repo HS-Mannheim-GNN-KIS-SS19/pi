@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import gym
+import matplotlib.pyplot as plt
 import numpy as np
 from gym import spaces
 
@@ -12,6 +13,7 @@ from servo_controller import AngleTooLittleException, AngleTooBigException
 
 env_properties = AI.properties.env
 light_properties = AI.properties.light
+visualize = AI.properties.visualize
 
 
 class AbstractEezybotEnv(gym.Env, ABC):
@@ -54,10 +56,26 @@ class AbstractEezybotEnv(gym.Env, ABC):
                                             shape=(4,),
                                             dtype=env_properties.input_data_type)
         self.reward_range = (-float('inf'), float('inf'))
-        self.action = None
-        self.d_reward = None
-        self.r_reward = None
-        self.reward = None
+        if visualize:
+            self.action = None
+
+            self.d_reward = 0
+            self.r_reward = 0
+            self.reward = 0
+
+            self.d_reward_sum_this_episode = 0
+            self.r_reward_sum_this_episode = 0
+            self.total_reward_sum_this_episode = 0
+
+            self.average_d_reward_per_episode = []
+            self.average_r_reward_per_episode = []
+            self.average_reward_per_episode = []
+
+            self.step_count_this_episode = 0
+            self.step_count_per_episode = []
+
+            self.successful_episode = False
+            self.successful_episode_counter = 0
 
         self.action_tuples = self._map_action_to_angle_offset_tuple()
         self.state = None
@@ -80,7 +98,9 @@ class AbstractEezybotEnv(gym.Env, ABC):
         if old_state == (0, 0, 0) and new_state == (0, 0, 0):
             return True
         if new_state[2] > light_properties.get_success_radius_by_grid_radius(1000) and -300 < new_state[0] < 300:
-            print("SUCCESS!!!")
+            if visualize:
+                print("SUCCESS!!!")
+                self.successful_episode = True
             self.reset_position = None
             self.grab()
             return True
@@ -96,33 +116,39 @@ class AbstractEezybotEnv(gym.Env, ABC):
         except AngleTooBigException as e:
             rotation_successful = False
             rotation_state = 1
-            print(e)
+            if visualize:
+                print(e)
         except AngleTooLittleException as e:
             rotation_successful = False
             rotation_state = 2
-            print(e)
+            if visualize:
+                print(e)
         try:
             if arm_vertical_angle != 0:
                 eezybot.verticalArm.rotate(arm_vertical_angle, ensure_bounds=False)
         except AngleTooBigException as e:
             rotation_successful = False
             rotation_state = 3
-            print(e)
+            if visualize:
+                print(e)
         except AngleTooLittleException as e:
             rotation_successful = False
             rotation_state = 4
-            print(e)
+            if visualize:
+                print(e)
         try:
             if arm_horizontal_angle != 0:
                 eezybot.horizontalArm.rotate(arm_horizontal_angle, ensure_bounds=False)
         except AngleTooBigException as e:
             rotation_successful = False
             rotation_state = 5
-            print(e)
+            if visualize:
+                print(e)
         except AngleTooLittleException as e:
             rotation_successful = False
             rotation_state = 6
-            print(e)
+            if visualize:
+                print(e)
         return rotation_successful, rotation_state
 
     def step(self, action):
@@ -143,12 +169,21 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful, rotation_state = self._take_action(action)
         old_state = self.state
         eezybot.wait_for_all()
-        self.state = get_state()
+        state = get_state()
         episode_over = self._is_episode_over(old_state, self.state, rotation_successful)
-        self.action = action
-        self.reward, self.d_reward, self.r_reward = resolve_rewards(old_state, self.state, rotation_successful)
+        action = action
+        reward, d_reward, r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         eezybot.wait_for_all()
-        return self.state + (rotation_state,), self.reward, episode_over, {}
+        if visualize:
+            self.state = state
+            self.action = action
+            self.reward, self.d_reward, self.r_reward = reward, d_reward, r_reward
+            self.total_reward_sum_this_episode += reward
+            self.d_reward_sum_this_episode += d_reward
+            self.r_reward_sum_this_episode += r_reward
+            self.step_count_this_episode += 1
+
+        return state + (rotation_state,), reward, episode_over, {}
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
@@ -165,6 +200,13 @@ class AbstractEezybotEnv(gym.Env, ABC):
             eezybot.horizontalArm.to_default()
             eezybot.wait_for_all()
             self.state = get_state()
+
+        if visualize and self.successful_episode:
+            self.total_reward_sum_this_episode = 0
+            self.d_reward_sum_this_episode = 0
+            self.r_reward_sum_this_episode = 0
+            self.step_count_this_episode = 0
+            self.successful_episode = False
         return self.state + (0,)
 
     def render(self, mode='human', close=False):
@@ -188,10 +230,43 @@ class AbstractEezybotEnv(gym.Env, ABC):
             mode (str): the mode to render with
             close (bool): -
         """
+        if visualize:
+            print("current state: {}".format(self.state))
+            print("Action: {}".format(self.action_tuples[self.action]))
+            print("{} = d_reward: {} + r_reward: {}".format(self.reward, self.d_reward, self.r_reward))
+            if self.successful_episode:
+                average_d_reward = self.d_reward_sum_this_episode / self.step_count_this_episode
+                average_r_reward = self.r_reward_sum_this_episode / self.step_count_this_episode
+                average_total_reward = self.total_reward_sum_this_episode / self.step_count_this_episode
+                print("Average Distance Reward this episode: {}".format(average_d_reward))
+                print("Average Radius Reward this episode: {}".format(average_r_reward))
+                print("Average Total Reward this episode: {}".format(average_total_reward))
 
-        print("current state: {}".format(self.state))
-        print("Action: {}".format(self.action_tuples[self.action]))
-        print("{} = d_reward: {} + r_reward: {}".format(self.reward, self.d_reward, self.r_reward))
+                self.average_d_reward_per_episode.append(average_d_reward)
+                self.average_r_reward_per_episode.append(average_r_reward)
+                self.average_reward_per_episode.append(average_total_reward)
+                self.step_count_per_episode.append(self.step_count_this_episode)
+                self.successful_episode_counter += 1
+
+                plt.figure(1)
+                plt.subplot(211)
+                # Data
+                episodes = range(1, self.successful_episode_counter)
+                # multiple line plot
+                plt.plot(episodes, self.average_d_reward_per_episode, marker='o', markerfacecolor='gold', markersize=6,
+                         color='yellow', linewidth=2, label='Distance Reward')
+                plt.plot((episodes, self.average_r_reward_per_episode), marker='o', markerfacecolor='limegreen',
+                         markersize=6, color='lawngreen', linewidth=2, label='Radius Reward')
+                plt.plot((episodes, self.average_reward_per_episode), marker='o', markerfacecolor='blue', markersize=6,
+                         color='skyblue', linewidth=2, label='Reward')
+                plt.xlabel('Episodes')
+                plt.legend()
+                plt.subplot(212)
+                plt.plot((episodes, self.step_count_per_episode), marker='o', markerfacecolor='red', markersize=6,
+                         color='tomato', linewidth=2)
+                plt.xlabel('Episodes')
+                plt.ylabel('Steps')
+                plt.show()
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.

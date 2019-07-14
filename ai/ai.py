@@ -1,4 +1,5 @@
 import gym
+import matplotlib.pyplot as plt
 import numpy as np
 from keras.layers import Dense, Activation, Flatten
 from keras.models import Sequential
@@ -10,11 +11,14 @@ from rl.policy import EpsGreedyQPolicy
 from constants import AI
 
 network = AI.properties.network
+visualize = AI.properties.visualize
 
 
 def train(dqn, env, steps):
     print('start learning...')
-    dqn.fit(env, nb_steps=steps, visualize=True, verbose=2)
+    history = dqn.fit(env, nb_steps=steps, visualize=True, verbose=2)
+    if visualize:
+        plt.plot(history)
 
     # After training is done, we save the final weights.
     dqn.save_weights(network.weights_path[0] + str(network.weights_path[1] + 1) + '.h5f', overwrite=True)
@@ -39,7 +43,8 @@ class EezybotDQN:
             model.add(Activation('relu'))
         model.add(Dense(nb_actions))
         model.add(Activation('linear'))
-        print(model.summary())
+        if visualize:
+            print(model.summary())
         if not create_new:
             try:
                 model.load_weights(network.weights_path[0] + str(network.weights_path[1]) + '.h5f')
