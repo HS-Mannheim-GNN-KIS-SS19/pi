@@ -251,7 +251,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
                 plt.figure(1)
                 plt.subplot(211)
                 # Data
-                episodes = range(1, self.successful_episode_counter)
+                episodes = range(1, self.successful_episode_counter + 1)
                 # multiple line plot
                 plt.plot(episodes, self.average_d_reward_per_episode, marker='o', markerfacecolor='gold', markersize=6,
                          color='yellow', linewidth=2, label='Distance Reward')
