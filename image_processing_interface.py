@@ -1,5 +1,17 @@
-from constants import AI
-from image_processing import detect
+from constants import AI, IMAGE_PROCESSING
+
+if not IMAGE_PROCESSING.USE_FAKE_IMAGE_PROCESSING:
+    from image_processing import detect
+else:  # debug
+    import numpy as np
+
+
+    def detect(colorMin, colorMax):
+        return {
+            "marbles": [
+                tuple([np.random.randint(50), np.random.randint(50), np.random.randint(90)])],
+            "shape": [1024]
+        }
 
 light_properties = AI.properties.light
 env_properties = AI.properties.env

@@ -22,24 +22,24 @@ def register_env():
 
     register(
         id=env_name,
-        entry_point='gym_eezybot.envs:ComplexEezybotEnv',
-        timestep_limit=1000,
+        entry_point='gym_.gym_eezybot.envs:ComplexEezybotEnv',
+        # timestep_limit=1000,
         reward_threshold=1.0,
         nondeterministic=True,
     )
 
     register(
         id=env_name2,
-        entry_point='gym_eezybot.envs:OneServoEezybotEnv',
-        timestep_limit=1000,
+        entry_point='gym_.gym_eezybot.envs:OneServoEezybotEnv',
+        # timestep_limit=1000,
         reward_threshold=1.0,
         nondeterministic=True,
     )
 
     register(
         id=env_name3,
-        entry_point='gym_eezybot.envs:SimpleEezybotEnv',
-        timestep_limit=1000,
+        entry_point='gym_.gym_eezybot.envs:SimpleEezybotEnv',
+        # timestep_limit=1000,
         reward_threshold=1.0,
         nondeterministic=True,
     )

@@ -1,6 +1,4 @@
 import gym
-import matplotlib.pyplot as plt
-import numpy as np
 from keras.layers import Dense, Activation, Flatten
 from keras.models import Sequential
 from keras.optimizers import Adam
@@ -17,8 +15,10 @@ visualize = AI.properties.visualize
 def train(dqn, env, steps):
     print('start learning...')
     history = dqn.fit(env, nb_steps=steps, visualize=True, verbose=2)
-    if visualize:
-        plt.plot(history)
+    # # for some reason this doesn't show anything
+    # if visualize:
+    #     print(history.history.keys())
+    #     plt.plot(history.history['episode_reward'])
 
     # After training is done, we save the final weights.
     dqn.save_weights(network.weights_path[0] + str(network.weights_path[1] + 1) + '.h5f', overwrite=True)
@@ -30,8 +30,8 @@ class EezybotDQN:
         # Get the environment and extract the number of actions.
         print('building gym...')
         env = gym.make(AI.properties.env.type_name)
-        np.random.seed(123)
-        env.seed(123)
+        # np.random.seed(123)
+        # env.seed(123)
         nb_actions = env.action_space.n
 
         print('initializing DQN...')
@@ -57,7 +57,7 @@ class EezybotDQN:
                 dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory,
                                nb_steps_warmup=training.warm_up_steps,
                                target_model_update=1e-2, policy=policy)
-                dqn.compile(Adam(lr=training.learn_rate), metrics=['mae'])
+                dqn.compile(Adam(lr=training.learn_rate), metrics=['mae', 'accuracy'])
                 train(dqn, env, training.steps)
         else:
             dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, target_model_update=1e-2)

@@ -71,7 +71,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
             self.average_r_reward_per_episode = []
             self.average_reward_per_episode = []
 
-            self.step_count_this_episode = 0
+            self.step_count_this_episode = 1
             self.step_count_per_episode = []
 
             self.successful_episode = False
@@ -102,6 +102,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
                 print("SUCCESS!!!")
                 self.successful_episode = True
             self.reset_position = None
+            self.showRewardsAndSteps()
             self.grab()
             return True
         return False
@@ -169,21 +170,21 @@ class AbstractEezybotEnv(gym.Env, ABC):
         rotation_successful, rotation_state = self._take_action(action)
         old_state = self.state
         eezybot.wait_for_all()
-        state = get_state()
+        self.state = get_state()
         episode_over = self._is_episode_over(old_state, self.state, rotation_successful)
         action = action
         reward, d_reward, r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         eezybot.wait_for_all()
         if visualize:
-            self.state = state
             self.action = action
             self.reward, self.d_reward, self.r_reward = reward, d_reward, r_reward
-            self.total_reward_sum_this_episode += reward
-            self.d_reward_sum_this_episode += d_reward
-            self.r_reward_sum_this_episode += r_reward
-            self.step_count_this_episode += 1
+            if not self.successful_episode:
+                self.total_reward_sum_this_episode += reward
+                self.d_reward_sum_this_episode += d_reward
+                self.r_reward_sum_this_episode += r_reward
+                self.step_count_this_episode += 1
 
-        return state + (rotation_state,), reward, episode_over, {}
+        return self.state + (rotation_state,), reward, episode_over, {}
 
     def reset(self):
         """Resets the state of the environment and returns an initial observation.
@@ -205,7 +206,7 @@ class AbstractEezybotEnv(gym.Env, ABC):
             self.total_reward_sum_this_episode = 0
             self.d_reward_sum_this_episode = 0
             self.r_reward_sum_this_episode = 0
-            self.step_count_this_episode = 0
+            self.step_count_this_episode = 1
             self.successful_episode = False
         return self.state + (0,)
 
@@ -234,39 +235,6 @@ class AbstractEezybotEnv(gym.Env, ABC):
             print("current state: {}".format(self.state))
             print("Action: {}".format(self.action_tuples[self.action]))
             print("{} = d_reward: {} + r_reward: {}".format(self.reward, self.d_reward, self.r_reward))
-            if self.successful_episode:
-                average_d_reward = self.d_reward_sum_this_episode / self.step_count_this_episode
-                average_r_reward = self.r_reward_sum_this_episode / self.step_count_this_episode
-                average_total_reward = self.total_reward_sum_this_episode / self.step_count_this_episode
-                print("Average Distance Reward this episode: {}".format(average_d_reward))
-                print("Average Radius Reward this episode: {}".format(average_r_reward))
-                print("Average Total Reward this episode: {}".format(average_total_reward))
-
-                self.average_d_reward_per_episode.append(average_d_reward)
-                self.average_r_reward_per_episode.append(average_r_reward)
-                self.average_reward_per_episode.append(average_total_reward)
-                self.step_count_per_episode.append(self.step_count_this_episode)
-                self.successful_episode_counter += 1
-
-                plt.figure(1)
-                plt.subplot(211)
-                # Data
-                episodes = range(1, self.successful_episode_counter + 1)
-                # multiple line plot
-                plt.plot(episodes, self.average_d_reward_per_episode, marker='o', markerfacecolor='gold', markersize=6,
-                         color='yellow', linewidth=2, label='Distance Reward')
-                plt.plot((episodes, self.average_r_reward_per_episode), marker='o', markerfacecolor='limegreen',
-                         markersize=6, color='lawngreen', linewidth=2, label='Radius Reward')
-                plt.plot((episodes, self.average_reward_per_episode), marker='o', markerfacecolor='blue', markersize=6,
-                         color='skyblue', linewidth=2, label='Reward')
-                plt.xlabel('Episodes')
-                plt.legend()
-                plt.subplot(212)
-                plt.plot((episodes, self.step_count_per_episode), marker='o', markerfacecolor='red', markersize=6,
-                         color='tomato', linewidth=2)
-                plt.xlabel('Episodes')
-                plt.ylabel('Steps')
-                plt.show()
 
     def close(self):
         """Override close in your subclass to perform any necessary cleanup.
@@ -301,3 +269,41 @@ class AbstractEezybotEnv(gym.Env, ABC):
                 state = get_state()
         self.reset_position = eezybot.base.get_angle()
         return state
+
+    def showRewardsAndSteps(self):
+        average_d_reward = self.d_reward_sum_this_episode / self.step_count_this_episode
+        average_r_reward = self.r_reward_sum_this_episode / self.step_count_this_episode
+        average_total_reward = self.total_reward_sum_this_episode / self.step_count_this_episode
+        # print("Average Distance Reward this episode: {}".format(average_d_reward))
+        # print("Average Radius Reward this episode: {}".format(average_r_reward))
+        # print("Average Total Reward this episode: {}".format(average_total_reward))
+
+        self.average_d_reward_per_episode.append(average_d_reward)
+        self.average_r_reward_per_episode.append(average_r_reward)
+        self.average_reward_per_episode.append(average_total_reward)
+        self.step_count_per_episode.append(self.step_count_this_episode)
+        self.successful_episode_counter += 1
+
+        plt.figure(1)
+        plt.subplot(211)
+        # Data
+        episodes = range(0, self.successful_episode_counter)
+        # multiple line plot
+        plt.plot(episodes, self.average_d_reward_per_episode, marker='o', markerfacecolor='gold', markersize=6,
+                 color='yellow', linewidth=2, label='Distance Reward')
+        plt.plot(episodes, self.average_r_reward_per_episode, marker='o', markerfacecolor='limegreen',
+                 markersize=6, color='lawngreen', linewidth=2, label='Radius Reward')
+        plt.plot(episodes, self.average_reward_per_episode, marker='o', markerfacecolor='blue', markersize=6,
+                 color='skyblue', linewidth=2, label='Reward')
+        plt.xticks(episodes)
+        plt.xlabel('Episodes')
+        plt.ylabel('Average Rewards')
+        plt.legend()
+        plt.subplot(212)
+        plt.plot(episodes, self.step_count_per_episode, marker='o', markerfacecolor='red', markersize=6,
+                 color='tomato', linewidth=2)
+        plt.xticks(episodes)
+        plt.xlabel('Episodes')
+        plt.ylabel('Steps')
+        plt.show()
+        plt.close('all')

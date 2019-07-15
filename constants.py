@@ -9,6 +9,8 @@ class SERVO_CONTROLLER:
 
 
 class EEZYBOT_CONTROLLER:
+    NO_STEP_TIMES = False
+
     class MANUEL_CONTROL:
         # Should be False if not running on pi due to use of picamera
         RESOLVE_REWARDS = True if not SERVO_CONTROLLER.USE_FAKE_CONTROLLER else False
@@ -56,6 +58,8 @@ class IMAGE_PROCESSING:
     X_OFFSET = -30
     EXECUTE_IN_PYTHON2 = False
     USE_IMAGE_NOT_CAMERA = False
+    # debug
+    USE_FAKE_IMAGE_PROCESSING = False
 
 
 """----------------------------------------AI--------------------------------------------"""
@@ -207,6 +211,27 @@ class AI:
                 pass
 
         class Simple:
+            class debug:
+                properties = AiProperties(
+                    network_properties=NetworkProperties(
+                        weights_path=weights_path_by_qualname(__qualname__, cut="_Type."),
+                        hidden_layer_sizes=[128, 64, 64],
+                        trainings=[
+                            TrainingPhase(warm_up_steps=40, steps=50, epsilon=0.5,
+                                          learn_rate=0.003),
+                            TrainingPhase(warm_up_steps=40, steps=700, epsilon=0.35,
+                                          learn_rate=0.0015),
+                            TrainingPhase(warm_up_steps=40, steps=300, epsilon=0.2,
+                                          learn_rate=0.001)
+                        ]),
+                    env_properties=EnvProperties(env_type=EnvType.Simple, input_data_type=numpy.int32,
+                                                 input_grid_radius=1000,
+                                                 step_sizes=StepSize(base=2, vertical=20, horizontal=20)),
+                    reward_properties=RewardProperties(for_failing=-300, for_success=10000,
+                                                       state_multipliers=StateMultiplier(x=2, y=1, radius=20)),
+                    light=Light(Light.Intensity.VERY_HIGH),
+                    visualize=True)
+
             class V0:
                 properties = AiProperties(
                     network_properties=NetworkProperties(
@@ -369,4 +394,11 @@ class AI:
                 pass
 
     # Currently chosen properties
-    properties = _Type.Simple.V7.properties  # type: AiProperties
+    properties = _Type.Simple.debug.properties  # type: AiProperties
+
+
+debug = False
+if debug:
+    SERVO_CONTROLLER.USE_FAKE_CONTROLLER = True
+    IMAGE_PROCESSING.USE_FAKE_IMAGE_PROCESSING = True
+    EEZYBOT_CONTROLLER.NO_STEP_TIMES = True
