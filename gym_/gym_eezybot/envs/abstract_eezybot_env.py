@@ -4,6 +4,8 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 from gym import spaces
+# noinspection PyUnresolvedReferences
+from mpl_toolkits import mplot3d
 
 from constants import AI
 from eezybot_controller import eezybot
