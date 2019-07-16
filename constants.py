@@ -394,7 +394,7 @@ class AI:
                 pass
 
     # Currently chosen properties
-    properties = _Type.Simple.debug.properties  # type: AiProperties
+    properties = _Type.Simple.V7.properties  # type: AiProperties
 
 
 debug = False

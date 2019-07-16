@@ -59,6 +59,10 @@ class AbstractEezybotEnv(gym.Env, ABC):
         if visualize:
             self.action = None
 
+            self.x_states = []
+            self.y_states = []
+            self.rad_states = []
+
             self.d_reward = 0
             self.r_reward = 0
             self.reward = 0
@@ -176,6 +180,10 @@ class AbstractEezybotEnv(gym.Env, ABC):
         reward, d_reward, r_reward = resolve_rewards(old_state, self.state, rotation_successful)
         eezybot.wait_for_all()
         if visualize:
+            self.x_states.append(self.state[0])
+            self.y_states.append(self.state[1])
+            self.rad_states.append(self.state[2])
+
             self.action = action
             self.reward, self.d_reward, self.r_reward = reward, d_reward, r_reward
             if not self.successful_episode:
@@ -203,6 +211,10 @@ class AbstractEezybotEnv(gym.Env, ABC):
             self.state = get_state()
 
         if visualize and self.successful_episode:
+            self.x_states.clear()
+            self.y_states.clear()
+            self.rad_states.clear()
+
             self.total_reward_sum_this_episode = 0
             self.d_reward_sum_this_episode = 0
             self.r_reward_sum_this_episode = 0
@@ -305,5 +317,23 @@ class AbstractEezybotEnv(gym.Env, ABC):
         plt.xticks(episodes)
         plt.xlabel('Episodes')
         plt.ylabel('Steps')
+        plt.show()
+        plt.figure(2)
+        plt.plot(episodes, self.average_reward_per_episode, marker='o', markerfacecolor='blue', markersize=6,
+                 color='skyblue', linewidth=2, label='Reward')
+        plt.xticks(episodes)
+        plt.xlabel('Episodes')
+        plt.ylabel('Average Reward')
+        plt.show()
+        plt.figure(3)
+        ax = plt.axes(projection='3d')
+        ax.scatter3D(self.rad_states, self.x_states, self.y_states, cmap='hsv')
+        ax.plot3D(self.rad_states, self.x_states, self.y_states, color='gray')
+        ax.set_ylim3d(-600, 600)
+        ax.set_ylabel('Horizontal')
+        ax.set_xlim3d(0, 400)
+        ax.set_xlabel('Radius')
+        ax.set_zlim3d(-600, 600)
+        ax.set_zlabel('Vertical')
         plt.show()
         plt.close('all')
